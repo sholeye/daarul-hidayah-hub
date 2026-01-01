@@ -1,10 +1,31 @@
+/**
+ * =============================================================================
+ * TAILWIND CSS CONFIGURATION
+ * =============================================================================
+ * 
+ * This configuration extends Tailwind CSS with Daarul Hidayah's design system.
+ * It consumes CSS variables from index.css for consistent theming.
+ * =============================================================================
+ */
+
 import type { Config } from "tailwindcss";
 
 export default {
+  // Enable dark mode via class toggle
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  
+  // Content paths for Tailwind to scan
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
+  
   prefix: "",
+  
   theme: {
+    // Container settings
     container: {
       center: true,
       padding: "2rem",
@@ -12,10 +33,15 @@ export default {
         "2xl": "1400px",
       },
     },
+    
     extend: {
+      // Primary font family - Bricolage Grotesque
       fontFamily: {
-        primary: ['Bricolage Grotesque', 'sans-serif'],
+        primary: ['Bricolage Grotesque', 'system-ui', 'sans-serif'],
+        sans: ['Bricolage Grotesque', 'system-ui', 'sans-serif'],
       },
+      
+      // Colors from CSS variables
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -61,17 +87,24 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      
+      // Border radius from CSS variable
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      
+      // Box shadows from CSS variables
       boxShadow: {
         'soft': 'var(--shadow-soft)',
         'medium': 'var(--shadow-medium)',
         'strong': 'var(--shadow-strong)',
         'glow': 'var(--shadow-glow)',
+        'glow-secondary': 'var(--shadow-glow-secondary)',
       },
+      
+      // Animation keyframes
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -86,17 +119,36 @@ export default {
           to: { opacity: "1" },
         },
         "slide-up": {
-          from: { opacity: "0", transform: "translateY(20px)" },
+          from: { opacity: "0", transform: "translateY(24px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "slide-down": {
+          from: { opacity: "0", transform: "translateY(-16px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
       },
+      
+      // Animation utilities
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out forwards",
         "slide-up": "slide-up 0.6s ease-out forwards",
+        "slide-down": "slide-down 0.4s ease-out forwards",
+        "scale-in": "scale-in 0.4s ease-out forwards",
+      },
+      
+      // Spacing
+      spacing: {
+        '18': '4.5rem',
+        '22': '5.5rem',
       },
     },
   },
+  
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
