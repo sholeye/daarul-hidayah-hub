@@ -19,6 +19,12 @@ import NotFound from "./pages/NotFound";
 // Admin
 import { AdminLayout } from "@/features/admin/AdminLayout";
 import { AdminDashboard } from "@/features/admin/AdminDashboard";
+import { StudentsPage } from "@/features/admin/StudentsPage";
+import { AttendancePage } from "@/features/admin/AttendancePage";
+import { FinancePage } from "@/features/admin/FinancePage";
+import { ResultsPage } from "@/features/admin/ResultsPage";
+import { AnnouncementsPage } from "@/features/admin/AnnouncementsPage";
+import { SettingsPage } from "@/features/admin/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -46,12 +52,12 @@ const App = () => (
                 </ProtectedRoute>
               }>
                 <Route index element={<AdminDashboard />} />
-                <Route path="students" element={<AdminDashboard />} />
-                <Route path="attendance" element={<AdminDashboard />} />
-                <Route path="finance" element={<AdminDashboard />} />
-                <Route path="results" element={<AdminDashboard />} />
-                <Route path="announcements" element={<AdminDashboard />} />
-                <Route path="settings" element={<AdminDashboard />} />
+                <Route path="students" element={<StudentsPage />} />
+                <Route path="attendance" element={<AttendancePage />} />
+                <Route path="finance" element={<FinancePage />} />
+                <Route path="results" element={<ResultsPage />} />
+                <Route path="announcements" element={<AnnouncementsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
               </Route>
 
               {/* Instructor Routes */}
