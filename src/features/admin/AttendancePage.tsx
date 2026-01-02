@@ -3,87 +3,65 @@
  * ATTENDANCE MANAGEMENT PAGE
  * =============================================================================
  * 
- * QR-based attendance tracking with scan simulation and records management.
+ * List-based attendance tracking with checkbox marking system.
  * =============================================================================
  */
 
 import React, { useState } from 'react';
 import { 
-  FiCamera, FiCheckCircle, FiClock, FiXCircle, FiCalendar,
-  FiSearch, FiUser, FiRefreshCw
+  FiCheckCircle, FiClock, FiXCircle, FiCalendar,
+  FiSearch, FiUser, FiSave, FiCheck
 } from 'react-icons/fi';
-import { mockStudents, mockAttendance } from '@/data/mockData';
-import { Student, AttendanceRecord } from '@/types';
+import { mockStudents, mockAttendance, schoolClasses } from '@/data/mockData';
+import { AttendanceRecord } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { formatDate } from '@/utils/helpers';
 
+// ---------------------------------------------------------------------------
+// Main Attendance Page Component
+// ---------------------------------------------------------------------------
 export const AttendancePage: React.FC = () => {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>(mockAttendance);
-  const [scanMode, setScanMode] = useState(false);
-  const [scannedId, setScannedId] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClass, setSelectedClass] = useState<string>('all');
 
-  // Get today's attendance
-  const todayAttendance = attendance.filter(a => a.date === selectedDate);
-  const presentCount = todayAttendance.filter(a => a.status === 'present').length;
-  const lateCount = todayAttendance.filter(a => a.status === 'late').length;
-  const absentCount = mockStudents.length - presentCount - lateCount;
+  // Get attendance for selected date
+  const dateAttendance = attendance.filter(a => a.date === selectedDate);
+  const presentCount = dateAttendance.filter(a => a.status === 'present').length;
+  const lateCount = dateAttendance.filter(a => a.status === 'late').length;
+  const absentCount = dateAttendance.filter(a => a.status === 'absent').length;
 
-  // Simulate QR scan
-  const handleScan = () => {
-    const student = mockStudents.find(s => 
-      s.studentId.toLowerCase() === scannedId.toLowerCase()
-    );
+  // Filter students by class and search
+  const filteredStudents = mockStudents
+    .filter(s => selectedClass === 'all' || s.class === selectedClass)
+    .filter(s => s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                 s.studentId.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    if (!student) {
-      toast.error('Student not found!');
-      return;
-    }
-
-    // Check if already marked
-    const existing = attendance.find(a => 
-      a.studentId === student.studentId && a.date === selectedDate
-    );
-
-    if (existing) {
-      toast.warning(`${student.fullName} already marked as ${existing.status}`);
-      return;
-    }
-
-    // Determine status based on time (mock)
-    const now = new Date();
-    const hour = now.getHours();
-    const status = hour < 8 ? 'present' : hour < 9 ? 'late' : 'present';
-    const checkInTime = now.toTimeString().slice(0, 5);
-
-    const newRecord: AttendanceRecord = {
-      id: Date.now().toString(),
-      studentId: student.studentId,
-      date: selectedDate,
-      status,
-      checkInTime,
-    };
-
-    setAttendance([newRecord, ...attendance]);
-    setScannedId('');
-    toast.success(`${student.fullName} marked as ${status}`);
+  // Get student attendance status for selected date
+  const getStudentStatus = (studentId: string): 'present' | 'absent' | 'late' | null => {
+    const record = dateAttendance.find(a => a.studentId === studentId);
+    if (!record) return null;
+    if (record.status === 'excused') return 'absent';
+    return record.status;
   };
 
-  // Mark attendance manually
-  const markAttendance = (studentId: string, status: 'present' | 'absent' | 'late') => {
-    const existing = attendance.find(a => 
-      a.studentId === studentId && a.date === selectedDate
+  // Toggle attendance status
+  const toggleAttendance = (studentId: string, status: 'present' | 'absent' | 'late') => {
+    const existingIndex = attendance.findIndex(
+      a => a.studentId === studentId && a.date === selectedDate
     );
 
-    if (existing) {
-      setAttendance(attendance.map(a => 
-        a.id === existing.id ? { ...a, status } : a
+    if (existingIndex >= 0) {
+      // Update existing record
+      setAttendance(attendance.map((a, i) => 
+        i === existingIndex ? { ...a, status } : a
       ));
     } else {
+      // Create new record
       const newRecord: AttendanceRecord = {
         id: Date.now().toString(),
         studentId,
@@ -91,18 +69,34 @@ export const AttendancePage: React.FC = () => {
         status,
         checkInTime: status !== 'absent' ? new Date().toTimeString().slice(0, 5) : undefined,
       };
-      setAttendance([newRecord, ...attendance]);
+      setAttendance([...attendance, newRecord]);
     }
-    toast.success('Attendance updated');
   };
 
-  // Filter students for display
-  const studentsWithAttendance = mockStudents
-    .filter(s => s.fullName.toLowerCase().includes(searchQuery.toLowerCase()))
-    .map(student => {
-      const record = todayAttendance.find(a => a.studentId === student.studentId);
-      return { ...student, attendanceStatus: record?.status || null, checkInTime: record?.checkInTime };
-    });
+  // Mark all as present
+  const markAllPresent = () => {
+    const newRecords = filteredStudents
+      .filter(s => !getStudentStatus(s.studentId))
+      .map(s => ({
+        id: Date.now().toString() + s.studentId,
+        studentId: s.studentId,
+        date: selectedDate,
+        status: 'present' as const,
+        checkInTime: new Date().toTimeString().slice(0, 5),
+      }));
+
+    if (newRecords.length > 0) {
+      setAttendance([...attendance, ...newRecords]);
+      toast.success(`Marked ${newRecords.length} students as present`);
+    } else {
+      toast.info('All students already have attendance marked');
+    }
+  };
+
+  // Save attendance (mock)
+  const saveAttendance = () => {
+    toast.success('Attendance saved successfully!');
+  };
 
   return (
     <div className="space-y-6">
@@ -110,20 +104,22 @@ export const AttendancePage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Attendance</h1>
-          <p className="text-muted-foreground mt-1">Track and manage student attendance</p>
+          <p className="text-muted-foreground mt-1">Mark and manage student attendance</p>
         </div>
-        <Button 
-          onClick={() => setScanMode(!scanMode)} 
-          variant={scanMode ? 'secondary' : 'default'}
-          className={scanMode ? '' : 'btn-glow'}
-        >
-          <FiCamera className="w-4 h-4 mr-2" />
-          {scanMode ? 'Close Scanner' : 'Scan QR Code'}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={markAllPresent}>
+            <FiCheck className="w-4 h-4 mr-2" />
+            Mark All Present
+          </Button>
+          <Button onClick={saveAttendance} className="btn-glow">
+            <FiSave className="w-4 h-4 mr-2" />
+            Save
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
             <FiCheckCircle className="w-6 h-6 text-primary" />
@@ -153,41 +149,14 @@ export const AttendancePage: React.FC = () => {
         </div>
         <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-            <FiUser className="w-6 h-6 text-accent" />
+            <FiUser className="w-6 h-6 text-accent-foreground" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-foreground">{mockStudents.length}</p>
+            <p className="text-2xl font-bold text-foreground">{filteredStudents.length}</p>
             <p className="text-sm text-muted-foreground">Total</p>
           </div>
         </div>
       </div>
-
-      {/* QR Scanner Simulation */}
-      {scanMode && (
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-soft">
-          <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-            <FiCamera className="w-5 h-5 text-primary" />
-            QR Code Scanner (Simulation)
-          </h2>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                value={scannedId}
-                onChange={(e) => setScannedId(e.target.value)}
-                placeholder="Enter student ID (e.g., Kathir_001)"
-                className="h-12"
-              />
-            </div>
-            <Button onClick={handleScan} className="h-12">
-              <FiCheckCircle className="w-4 h-4 mr-2" />
-              Mark Present
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground mt-3">
-            In production, this would use the device camera to scan QR codes.
-          </p>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -200,6 +169,16 @@ export const AttendancePage: React.FC = () => {
             className="pl-12"
           />
         </div>
+        <select
+          value={selectedClass}
+          onChange={(e) => setSelectedClass(e.target.value)}
+          className="h-10 px-4 rounded-lg border border-input bg-background text-foreground"
+        >
+          <option value="all">All Classes</option>
+          {schoolClasses.map(c => (
+            <option key={c.id} value={c.name}>{c.name}</option>
+          ))}
+        </select>
         <div className="relative">
           <FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
@@ -211,7 +190,7 @@ export const AttendancePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Attendance List */}
+      {/* Attendance List with Checkboxes */}
       <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -219,83 +198,96 @@ export const AttendancePage: React.FC = () => {
               <tr>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Student</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Class</th>
+                <th className="text-center px-6 py-4 text-sm font-semibold text-foreground">
+                  <div className="flex items-center justify-center gap-1">
+                    <FiCheckCircle className="w-4 h-4 text-primary" />
+                    Present
+                  </div>
+                </th>
+                <th className="text-center px-6 py-4 text-sm font-semibold text-foreground">
+                  <div className="flex items-center justify-center gap-1">
+                    <FiClock className="w-4 h-4 text-secondary" />
+                    Late
+                  </div>
+                </th>
+                <th className="text-center px-6 py-4 text-sm font-semibold text-foreground">
+                  <div className="flex items-center justify-center gap-1">
+                    <FiXCircle className="w-4 h-4 text-destructive" />
+                    Absent
+                  </div>
+                </th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Status</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Check-in Time</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {studentsWithAttendance.map((student) => (
-                <tr key={student.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0">
-                        <span className="text-primary-foreground font-bold">{student.fullName[0]}</span>
+              {filteredStudents.map((student) => {
+                const status = getStudentStatus(student.studentId);
+                return (
+                  <tr key={student.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0">
+                          <span className="text-primary-foreground font-bold">{student.fullName[0]}</span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{student.fullName}</p>
+                          <p className="text-sm text-muted-foreground">{student.studentId}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-foreground">{student.fullName}</p>
-                        <p className="text-sm text-muted-foreground">{student.studentId}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-foreground">{student.class}</td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center">
+                        <Checkbox
+                          checked={status === 'present'}
+                          onCheckedChange={() => toggleAttendance(student.studentId, 'present')}
+                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        />
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-foreground">{student.class}</td>
-                  <td className="px-6 py-4">
-                    {student.attendanceStatus ? (
-                      <Badge variant={
-                        student.attendanceStatus === 'present' ? 'present' :
-                        student.attendanceStatus === 'late' ? 'late' : 'absent'
-                      }>
-                        {student.attendanceStatus}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">Not marked</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-foreground">
-                    {student.checkInTime || '-'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                      <button 
-                        onClick={() => markAttendance(student.studentId, 'present')}
-                        className={`p-2 rounded-lg transition-colors ${
-                          student.attendanceStatus === 'present' 
-                            ? 'bg-primary/20 text-primary' 
-                            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                        }`}
-                        title="Mark Present"
-                      >
-                        <FiCheckCircle className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => markAttendance(student.studentId, 'late')}
-                        className={`p-2 rounded-lg transition-colors ${
-                          student.attendanceStatus === 'late' 
-                            ? 'bg-secondary/20 text-secondary' 
-                            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                        }`}
-                        title="Mark Late"
-                      >
-                        <FiClock className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => markAttendance(student.studentId, 'absent')}
-                        className={`p-2 rounded-lg transition-colors ${
-                          student.attendanceStatus === 'absent' 
-                            ? 'bg-destructive/20 text-destructive' 
-                            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                        }`}
-                        title="Mark Absent"
-                      >
-                        <FiXCircle className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center">
+                        <Checkbox
+                          checked={status === 'late'}
+                          onCheckedChange={() => toggleAttendance(student.studentId, 'late')}
+                          className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
+                        />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center">
+                        <Checkbox
+                          checked={status === 'absent'}
+                          onCheckedChange={() => toggleAttendance(student.studentId, 'absent')}
+                          className="data-[state=checked]:bg-destructive data-[state=checked]:border-destructive"
+                        />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {status ? (
+                        <Badge variant={
+                          status === 'present' ? 'present' :
+                          status === 'late' ? 'late' : 'absent'
+                        }>
+                          {status}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Not marked</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+
+        {filteredStudents.length === 0 && (
+          <div className="p-12 text-center">
+            <FiUser className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+            <p className="text-muted-foreground">No students found</p>
+          </div>
+        )}
       </div>
     </div>
   );

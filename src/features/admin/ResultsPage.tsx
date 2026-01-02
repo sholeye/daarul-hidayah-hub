@@ -56,12 +56,16 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, student, exi
     e.preventDefault();
     if (!student) return;
 
-    const subjects = SUBJECTS.map(subject => ({
-      subject,
-      score: scores[subject] || 0,
-      grade: calculateGrade((scores[subject] || 0).toString()),
-      remarks: getGradeRemarks(scores[subject] || 0),
-    }));
+    const subjects = SUBJECTS.map(subject => {
+      const score = scores[subject] || 0;
+      const grade = calculateGrade(score);
+      return {
+        subject,
+        score,
+        grade,
+        remarks: getGradeRemarks(grade),
+      };
+    });
 
     const totalScore = subjects.reduce((sum, s) => sum + s.score, 0);
     const averageScore = totalScore / subjects.length;

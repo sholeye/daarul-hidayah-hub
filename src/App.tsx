@@ -26,6 +26,21 @@ import { ResultsPage } from "@/features/admin/ResultsPage";
 import { AnnouncementsPage } from "@/features/admin/AnnouncementsPage";
 import { SettingsPage } from "@/features/admin/SettingsPage";
 
+// Learner
+import { LearnerLayout } from "@/features/learner/LearnerLayout";
+import { LearnerDashboard } from "@/features/learner/LearnerDashboard";
+import { LearnerProfile } from "@/features/learner/LearnerProfile";
+import { LearnerAttendance } from "@/features/learner/LearnerAttendance";
+import { LearnerResults } from "@/features/learner/LearnerResults";
+import { LearnerFees } from "@/features/learner/LearnerFees";
+
+// Instructor
+import { InstructorLayout } from "@/features/instructor/InstructorLayout";
+import { InstructorDashboard } from "@/features/instructor/InstructorDashboard";
+import { InstructorClasses } from "@/features/instructor/InstructorClasses";
+import { InstructorAttendance } from "@/features/instructor/InstructorAttendance";
+import { InstructorResults } from "@/features/instructor/InstructorResults";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -63,16 +78,27 @@ const App = () => (
               {/* Instructor Routes */}
               <Route path="/instructor" element={
                 <ProtectedRoute allowedRoles={['instructor']}>
-                  <div className="p-8 text-center">Teacher Dashboard - Coming Soon</div>
+                  <InstructorLayout />
                 </ProtectedRoute>
-              } />
+              }>
+                <Route index element={<InstructorDashboard />} />
+                <Route path="classes" element={<InstructorClasses />} />
+                <Route path="attendance" element={<InstructorAttendance />} />
+                <Route path="results" element={<InstructorResults />} />
+              </Route>
 
               {/* Learner Routes */}
               <Route path="/learner" element={
                 <ProtectedRoute allowedRoles={['learner']}>
-                  <div className="p-8 text-center">Student Dashboard - Coming Soon</div>
+                  <LearnerLayout />
                 </ProtectedRoute>
-              } />
+              }>
+                <Route index element={<LearnerDashboard />} />
+                <Route path="profile" element={<LearnerProfile />} />
+                <Route path="attendance" element={<LearnerAttendance />} />
+                <Route path="results" element={<LearnerResults />} />
+                <Route path="fees" element={<LearnerFees />} />
+              </Route>
 
               <Route path="*" element={<NotFound />} />
             </Routes>
