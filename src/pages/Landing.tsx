@@ -1,3 +1,7 @@
+/**
+ * Landing Page - Main public-facing page for Daarul Hidayah
+ */
+
 import React from 'react';
 import { Navbar } from '@/features/common/Navbar';
 import { Footer } from '@/features/common/Footer';
@@ -7,6 +11,7 @@ import { AcademicStructureSection } from '@/features/common/AcademicStructureSec
 import { IslamicValuesSection } from '@/features/common/IslamicValuesSection';
 import { CurriculumSection } from '@/features/common/CurriculumSection';
 import { ProgramsSection } from '@/features/common/ProgramsSection';
+import { QuizHighlightSection } from '@/features/common/QuizHighlightSection';
 import { EventsSection } from '@/features/common/EventsSection';
 import { AnnouncementsSection } from '@/features/common/AnnouncementsSection';
 import { ContactCTASection } from '@/features/common/ContactCTASection';
@@ -22,6 +27,7 @@ const Landing: React.FC = () => {
         <IslamicValuesSection />
         <CurriculumSection />
         <ProgramsSection />
+        <QuizHighlightSection />
         <EventsSection />
         <AnnouncementsSection />
         <ContactCTASection />
