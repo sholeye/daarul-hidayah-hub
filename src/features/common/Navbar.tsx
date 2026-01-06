@@ -1,18 +1,26 @@
+/**
+ * Navbar - Main navigation component with language toggle
+ */
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FiMoon, FiSun, FiMenu, FiX } from 'react-icons/fi';
 import { useTheme } from '@/features/app/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageToggle } from '@/features/common/LanguageToggle';
 import { Button } from '@/components/ui/button';
 
 export const Navbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
+  const { t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/about', label: 'About' },
-    { href: '/curriculum', label: 'Curriculum' },
-    { href: '/contact', label: 'Contact' },
+    { href: '/', label: t.home },
+    { href: '/about', label: t.about },
+    { href: '/curriculum', label: t.curriculum },
+    { href: '/quiz', label: t.quiz },
+    { href: '/contact', label: t.contact },
   ];
 
   return (
@@ -44,7 +52,9 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <LanguageToggle />
+            
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -59,7 +69,7 @@ export const Navbar: React.FC = () => {
 
             <Link to="/login" className="hidden md:block">
               <Button variant="outline" size="sm">
-                Portal Login
+                {t.portalLogin}
               </Button>
             </Link>
 
