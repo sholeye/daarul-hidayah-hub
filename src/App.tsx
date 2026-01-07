@@ -31,6 +31,7 @@ import { FinancePage } from "@/features/admin/FinancePage";
 import { ResultsPage } from "@/features/admin/ResultsPage";
 import { AnnouncementsPage } from "@/features/admin/AnnouncementsPage";
 import { SettingsPage } from "@/features/admin/SettingsPage";
+import { AdminQuizPage } from "@/features/admin/AdminQuizPage";
 
 // Learner
 import { LearnerLayout } from "@/features/learner/LearnerLayout";
@@ -79,6 +80,7 @@ const App = () => (
                 <Route path="attendance" element={<AttendancePage />} />
                 <Route path="finance" element={<FinancePage />} />
                 <Route path="results" element={<ResultsPage />} />
+                <Route path="quiz" element={<AdminQuizPage />} />
                 <Route path="announcements" element={<AnnouncementsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>

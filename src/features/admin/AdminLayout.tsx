@@ -19,12 +19,16 @@ import { useTheme } from '@/features/app/ThemeContext';
 import { Button } from '@/components/ui/button';
 
 // Navigation items configuration
+import { FiAward } from 'react-icons/fi';
+
+// Navigation items configuration
 const navItems = [
   { icon: FiHome, label: 'Dashboard', path: '/admin' },
   { icon: FiUsers, label: 'Students', path: '/admin/students' },
   { icon: FiCalendar, label: 'Attendance', path: '/admin/attendance' },
   { icon: FiDollarSign, label: 'Finance', path: '/admin/finance' },
   { icon: FiFileText, label: 'Results', path: '/admin/results' },
+  { icon: FiAward, label: 'Quiz', path: '/admin/quiz' },
   { icon: FiBell, label: 'Announcements', path: '/admin/announcements' },
   { icon: FiSettings, label: 'Settings', path: '/admin/settings' },
 ];

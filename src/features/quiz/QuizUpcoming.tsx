@@ -1,16 +1,18 @@
 /**
- * QuizUpcoming - Shows next competition details and login for reps
+ * QuizUpcoming - Shows next competition details and rep login
+ * 
+ * Clean, minimal design with focus on key information
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FiCalendar, FiClock, FiUsers, FiPlay, FiLock } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiUsers, FiPlay, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { mockCompetitions, houses } from '@/data/quizMockData';
 import { formatDate } from '@/utils/helpers';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-// House color mapping
+// House colors
 const houseColors: Record<string, string> = {
   AbuBakr: 'bg-emerald-500',
   Umar: 'bg-blue-500',
@@ -19,6 +21,7 @@ const houseColors: Record<string, string> = {
 };
 
 export const QuizUpcoming: React.FC = () => {
+  const { t } = useLanguage();
   const [loginCode, setLoginCode] = useState('');
   const [isQuizTime, setIsQuizTime] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState('');
@@ -38,36 +41,32 @@ export const QuizUpcoming: React.FC = () => {
 
       const diff = scheduledDate.getTime() - now.getTime();
       
-      // Quiz is available 5 minutes before to 2 hours after
+      // Quiz available 5 min before to 2 hours after
       if (diff <= 5 * 60 * 1000 && diff > -2 * 60 * 60 * 1000) {
         setIsQuizTime(true);
-        setTimeRemaining('Quiz is LIVE!');
+        setTimeRemaining(t.quizIsLive);
       } else if (diff > 0) {
         setIsQuizTime(false);
-        // Calculate time remaining
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         setTimeRemaining(`${days}d ${hrs}h ${mins}m`);
       } else {
         setIsQuizTime(false);
-        setTimeRemaining('Competition ended');
+        setTimeRemaining(t.competitionEnded);
       }
     };
 
     checkTime();
-    const interval = setInterval(checkTime, 60000); // Update every minute
+    const interval = setInterval(checkTime, 60000);
     return () => clearInterval(interval);
-  }, [upcomingCompetition]);
+  }, [upcomingCompetition, t]);
 
   // Handle rep login
   const handleLogin = () => {
     if (!loginCode.trim()) return;
-    
-    // Find rep with this code
     const rep = upcomingCompetition?.representatives.find(r => r.loginCode === loginCode);
     if (rep && isQuizTime) {
-      // Redirect to quiz taking page
       window.location.href = `/quiz/take?code=${loginCode}`;
     }
   };
@@ -76,7 +75,12 @@ export const QuizUpcoming: React.FC = () => {
     return (
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-muted-foreground">No upcoming competition scheduled.</p>
+          <div className="max-w-md mx-auto">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <FiAlertCircle className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground">{t.noUpcoming}</p>
+          </div>
         </div>
       </section>
     );
@@ -91,27 +95,28 @@ export const QuizUpcoming: React.FC = () => {
   return (
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Section Header */}
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-2">
-              Upcoming <span className="text-gradient-secondary">Competition</span>
-            </h2>
-            <p className="text-muted-foreground">{upcomingCompetition.title}</p>
-          </div>
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+            {t.upcomingCompetition}
+          </h2>
+          <p className="text-muted-foreground">{upcomingCompetition.title}</p>
+        </div>
 
+        <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Competition Details */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Date & Time Card */}
+              {/* Date/Time and Stats Card */}
               <div className="rounded-2xl bg-card border border-border shadow-soft p-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                  {/* Date & Time */}
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <FiCalendar className="w-8 h-8 text-primary" />
+                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <FiCalendar className="w-7 h-7 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Scheduled For</p>
+                      <p className="text-sm text-muted-foreground">{t.scheduledFor}</p>
                       <p className="text-xl font-bold text-foreground">
                         {formatDate(upcomingCompetition.scheduledDate)}
                       </p>
@@ -119,49 +124,51 @@ export const QuizUpcoming: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className={`px-4 py-2 rounded-full ${isQuizTime ? 'bg-green-500 text-white animate-pulse' : 'bg-muted'}`}>
-                    <div className="flex items-center gap-2">
-                      <FiClock className="w-4 h-4" />
-                      <span className="font-medium">{timeRemaining}</span>
-                    </div>
+                  {/* Countdown */}
+                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium ${
+                    isQuizTime 
+                      ? 'bg-green-500 text-white animate-pulse' 
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <FiClock className="w-4 h-4" />
+                    <span>{timeRemaining}</span>
                   </div>
                 </div>
 
-                {/* Stats */}
+                {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="text-center p-4 rounded-xl bg-muted/50">
-                    <p className="text-2xl font-bold text-foreground">{upcomingCompetition.questions.length}</p>
-                    <p className="text-sm text-muted-foreground">Questions</p>
+                    <p className="text-3xl font-bold text-foreground">{upcomingCompetition.questions.length}</p>
+                    <p className="text-sm text-muted-foreground">{t.questions}</p>
                   </div>
                   <div className="text-center p-4 rounded-xl bg-muted/50">
-                    <p className="text-2xl font-bold text-foreground">{upcomingCompetition.repsPerHouse}</p>
-                    <p className="text-sm text-muted-foreground">Reps/House</p>
+                    <p className="text-3xl font-bold text-foreground">{upcomingCompetition.repsPerHouse}</p>
+                    <p className="text-sm text-muted-foreground">{t.repsPerHouse}</p>
                   </div>
                   <div className="text-center p-4 rounded-xl bg-muted/50">
-                    <p className="text-2xl font-bold text-foreground">30s</p>
-                    <p className="text-sm text-muted-foreground">Per Question</p>
+                    <p className="text-3xl font-bold text-foreground">30s</p>
+                    <p className="text-sm text-muted-foreground">{t.perQuestion}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Representatives by House */}
+              {/* Representatives Grid */}
               <div className="rounded-2xl bg-card border border-border shadow-soft p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <FiUsers className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-bold text-foreground">Representatives</h3>
+                  <h3 className="text-lg font-bold text-foreground">{t.representatives}</h3>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {houses.map(house => (
-                    <div key={house.name} className="p-4 rounded-xl bg-muted/50">
+                    <div key={house.name} className="p-4 rounded-xl bg-muted/30">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className={`w-6 h-6 rounded-full ${houseColors[house.name]}`} />
-                        <span className="font-semibold text-foreground">{house.name}</span>
-                        <span className="text-sm text-muted-foreground">({house.nameArabic})</span>
+                        <div className={`w-4 h-4 rounded-full ${houseColors[house.name]}`} />
+                        <span className="font-semibold text-sm text-foreground">{house.name}</span>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         {repsByHouse[house.name]?.map(rep => (
-                          <p key={rep.id} className="text-sm text-muted-foreground pl-8">
+                          <p key={rep.id} className="text-sm text-muted-foreground truncate">
                             {rep.name}
                           </p>
                         ))}
@@ -173,9 +180,9 @@ export const QuizUpcoming: React.FC = () => {
             </div>
 
             {/* Rep Login Card */}
-            <div className="rounded-2xl bg-card border border-border shadow-soft p-6 h-fit sticky top-24">
+            <div className="rounded-2xl bg-card border border-border shadow-soft p-6 h-fit lg:sticky lg:top-24">
               <div className="text-center mb-6">
-                <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${
+                <div className={`w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
                   isQuizTime ? 'bg-green-500/10' : 'bg-muted'
                 }`}>
                   {isQuizTime ? (
@@ -184,38 +191,34 @@ export const QuizUpcoming: React.FC = () => {
                     <FiLock className="w-10 h-10 text-muted-foreground" />
                   )}
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-2">Representative Login</h3>
+                <h3 className="text-xl font-bold text-foreground mb-2">{t.representativeLogin}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {isQuizTime 
-                    ? 'Enter your one-time code to start the quiz'
-                    : 'Login will be available at scheduled time'
-                  }
+                  {isQuizTime ? t.enterLoginCode : t.loginAvailableAtTime}
                 </p>
               </div>
 
               <div className="space-y-4">
                 <Input
                   type="text"
-                  placeholder="Enter your login code"
+                  placeholder="XX-0000-000"
                   value={loginCode}
                   onChange={(e) => setLoginCode(e.target.value.toUpperCase())}
                   disabled={!isQuizTime}
-                  className="text-center font-mono text-lg"
+                  className="text-center font-mono text-lg h-12"
                 />
                 
                 <Button 
-                  variant="hero" 
-                  className="w-full"
+                  className="w-full h-12"
                   disabled={!isQuizTime || !loginCode.trim()}
                   onClick={handleLogin}
                 >
-                  {isQuizTime ? 'Start Quiz' : 'Not Available Yet'}
+                  {isQuizTime ? t.startQuiz : t.notAvailableYet}
                 </Button>
               </div>
 
               {!isQuizTime && (
                 <p className="text-xs text-center text-muted-foreground mt-4">
-                  The quiz button will be enabled at the scheduled time.
+                  {t.quizButtonEnabled}
                 </p>
               )}
             </div>
