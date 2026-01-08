@@ -19,6 +19,7 @@ import Curriculum from "./pages/Curriculum";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Quiz from "./pages/Quiz";
+import QuizTake from "./pages/QuizTake";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
@@ -67,6 +68,7 @@ const App = () => (
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/quiz" element={<Quiz />} />
+                <Route path="/quiz/take" element={<QuizTake />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
 
               {/* Admin Routes */}
