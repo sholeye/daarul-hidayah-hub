@@ -139,7 +139,7 @@ const Quiz: React.FC = () => {
               If you're a representative, get your login code from your house captain and join the next competition!
             </p>
             <Link 
-              to="/#contact"
+              to="/#contact-cta"
               className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary font-semibold rounded-xl hover:bg-white/90 transition-colors shadow-lg"
             >
               Contact Us

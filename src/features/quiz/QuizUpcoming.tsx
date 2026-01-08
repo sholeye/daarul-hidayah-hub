@@ -6,11 +6,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { FiCalendar, FiClock, FiUsers, FiPlay, FiLock, FiAlertCircle } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { mockCompetitions, houses } from '@/data/quizMockData';
 import { formatDate } from '@/utils/helpers';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+/**
+ * DEMO MODE
+ * - true: reps can start the quiz immediately (no waiting for scheduled time)
+ * - false: start button only activates around the scheduled date/time
+ */
+const DEMO_MODE = true;
 
 // House colors
 const houseColors: Record<string, string> = {
@@ -22,6 +30,7 @@ const houseColors: Record<string, string> = {
 
 export const QuizUpcoming: React.FC = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [loginCode, setLoginCode] = useState('');
   const [isQuizTime, setIsQuizTime] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState('');
@@ -33,6 +42,12 @@ export const QuizUpcoming: React.FC = () => {
   useEffect(() => {
     if (!upcomingCompetition) return;
 
+    if (DEMO_MODE) {
+      setIsQuizTime(true);
+      setTimeRemaining(t.quizIsLive);
+      return;
+    }
+
     const checkTime = () => {
       const now = new Date();
       const [hours, minutes] = upcomingCompetition.scheduledTime.split(':').map(Number);
@@ -40,7 +55,7 @@ export const QuizUpcoming: React.FC = () => {
       scheduledDate.setHours(hours, minutes, 0, 0);
 
       const diff = scheduledDate.getTime() - now.getTime();
-      
+
       // Quiz available 5 min before to 2 hours after
       if (diff <= 5 * 60 * 1000 && diff > -2 * 60 * 60 * 1000) {
         setIsQuizTime(true);
@@ -62,12 +77,18 @@ export const QuizUpcoming: React.FC = () => {
     return () => clearInterval(interval);
   }, [upcomingCompetition, t]);
 
+  const canStartQuiz = DEMO_MODE || isQuizTime;
+
   // Handle rep login
   const handleLogin = () => {
-    if (!loginCode.trim()) return;
-    const rep = upcomingCompetition?.representatives.find(r => r.loginCode === loginCode);
-    if (rep && isQuizTime) {
-      window.location.href = `/quiz/take?code=${loginCode}`;
+    const cleaned = loginCode.trim();
+    if (!cleaned) return;
+
+    const rep = upcomingCompetition?.representatives.find(r => r.loginCode === cleaned);
+
+    // Demo mode: allow any non-empty code to proceed.
+    if (canStartQuiz && (rep || DEMO_MODE)) {
+      navigate(`/quiz/take?code=${encodeURIComponent(cleaned)}`);
     }
   };
 
@@ -126,8 +147,8 @@ export const QuizUpcoming: React.FC = () => {
                   
                   {/* Countdown */}
                   <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium ${
-                    isQuizTime 
-                      ? 'bg-green-500 text-white animate-pulse' 
+                    canStartQuiz 
+                      ? 'bg-primary text-primary-foreground animate-pulse' 
                       : 'bg-muted text-muted-foreground'
                   }`}>
                     <FiClock className="w-4 h-4" />
@@ -183,17 +204,17 @@ export const QuizUpcoming: React.FC = () => {
             <div className="rounded-2xl bg-card border border-border shadow-soft p-6 h-fit lg:sticky lg:top-24">
               <div className="text-center mb-6">
                 <div className={`w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
-                  isQuizTime ? 'bg-green-500/10' : 'bg-muted'
+                  canStartQuiz ? 'bg-primary/10' : 'bg-muted'
                 }`}>
-                  {isQuizTime ? (
-                    <FiPlay className="w-10 h-10 text-green-500" />
+                  {canStartQuiz ? (
+                    <FiPlay className="w-10 h-10 text-primary" />
                   ) : (
                     <FiLock className="w-10 h-10 text-muted-foreground" />
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-foreground mb-2">{t.representativeLogin}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {isQuizTime ? t.enterLoginCode : t.loginAvailableAtTime}
+                  {canStartQuiz ? t.enterLoginCode : t.loginAvailableAtTime}
                 </p>
               </div>
 
@@ -203,20 +224,20 @@ export const QuizUpcoming: React.FC = () => {
                   placeholder="XX-0000-000"
                   value={loginCode}
                   onChange={(e) => setLoginCode(e.target.value.toUpperCase())}
-                  disabled={!isQuizTime}
+                  disabled={!canStartQuiz}
                   className="text-center font-mono text-lg h-12"
                 />
                 
                 <Button 
                   className="w-full h-12"
-                  disabled={!isQuizTime || !loginCode.trim()}
+                  disabled={!canStartQuiz || !loginCode.trim()}
                   onClick={handleLogin}
                 >
-                  {isQuizTime ? t.startQuiz : t.notAvailableYet}
+                  {canStartQuiz ? t.startQuiz : t.notAvailableYet}
                 </Button>
               </div>
 
-              {!isQuizTime && (
+              {!canStartQuiz && (
                 <p className="text-xs text-center text-muted-foreground mt-4">
                   {t.quizButtonEnabled}
                 </p>
@@ -228,3 +249,4 @@ export const QuizUpcoming: React.FC = () => {
     </section>
   );
 };
+
