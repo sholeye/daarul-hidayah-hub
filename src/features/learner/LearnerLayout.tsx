@@ -1,9 +1,6 @@
 /**
  * =============================================================================
- * LEARNER LAYOUT
- * =============================================================================
- * 
- * Main layout wrapper for the student/learner dashboard with navigation.
+ * LEARNER LAYOUT - with i18n support
  * =============================================================================
  */
 
@@ -15,26 +12,22 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/features/app/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-// ---------------------------------------------------------------------------
-// Navigation Items
-// ---------------------------------------------------------------------------
-const navItems = [
-  { icon: FiHome, label: 'Dashboard', path: '/learner' },
-  { icon: FiUser, label: 'Profile', path: '/learner/profile' },
-  { icon: FiCalendar, label: 'Attendance', path: '/learner/attendance' },
-  { icon: FiFileText, label: 'Results', path: '/learner/results' },
-  { icon: FiDollarSign, label: 'Fees', path: '/learner/fees' },
-];
-
-// ---------------------------------------------------------------------------
-// Main Layout Component
-// ---------------------------------------------------------------------------
 export const LearnerLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+  const navItems = [
+    { icon: FiHome, label: t.dashboard, path: '/learner' },
+    { icon: FiUser, label: t.profile, path: '/learner/profile' },
+    { icon: FiCalendar, label: t.attendance, path: '/learner/attendance' },
+    { icon: FiFileText, label: t.results, path: '/learner/results' },
+    { icon: FiDollarSign, label: t.fees, path: '/learner/fees' },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -42,7 +35,7 @@ export const LearnerLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-40 px-4 flex items-center justify-between">
         <button
@@ -51,7 +44,7 @@ export const LearnerLayout: React.FC = () => {
         >
           <FiMenu className="w-6 h-6" />
         </button>
-        <span className="font-semibold text-foreground">Student Portal</span>
+        <span className="font-semibold text-foreground">{t.studentPortal}</span>
         <button
           onClick={toggleTheme}
           className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -70,16 +63,16 @@ export const LearnerLayout: React.FC = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 h-full w-64 bg-card border-r border-border z-50
+        fixed top-0 ${isRTL ? 'right-0' : 'left-0'} h-full w-64 bg-card border-${isRTL ? 'l' : 'r'} border-border z-50
         transform transition-transform duration-300 ease-in-out
         lg:translate-x-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'}
       `}>
         {/* Sidebar Header */}
         <div className="h-16 px-6 flex items-center justify-between border-b border-border">
           <div>
-            <h1 className="font-bold text-foreground">Daarul Hidayah</h1>
-            <p className="text-xs text-muted-foreground">Student Portal</p>
+            <h1 className="font-bold text-foreground">{t.schoolName}</h1>
+            <p className="text-xs text-muted-foreground">{t.studentPortal}</p>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -134,14 +127,14 @@ export const LearnerLayout: React.FC = () => {
               className="flex-1 p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive flex items-center justify-center gap-2"
             >
               <FiLogOut className="w-5 h-5" />
-              <span className="lg:hidden">Logout</span>
+              <span className="lg:hidden">{t.logout}</span>
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
+      <main className={`${isRTL ? 'lg:mr-64' : 'lg:ml-64'} pt-16 lg:pt-0 min-h-screen`}>
         <div className="p-6 lg:p-8">
           <Outlet />
         </div>

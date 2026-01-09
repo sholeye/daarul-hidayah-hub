@@ -1,8 +1,5 @@
 /**
- * QuizTake - Representative quiz taking experience (demo-ready)
- *
- * NOTE: This is intentionally client-only and uses mock data.
- * When moving to production, wire this to Lovable Cloud and enforce one-time codes.
+ * QuizTake - Representative quiz taking experience (demo-ready, i18n support)
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -73,8 +70,6 @@ export const QuizTake: React.FC = () => {
 
   const gradeQuestion = useCallback((q: QuizQuestion, ans: string) => {
     if (!ans.trim()) return 0;
-
-    // Short answer is strict (but case-insensitive) for now.
     const isCorrect = normalize(ans) === normalize(q.correctAnswer);
     return isCorrect ? q.points : 0;
   }, []);
@@ -93,7 +88,6 @@ export const QuizTake: React.FC = () => {
     (auto = false) => {
       if (!current || finished) return;
 
-      // Save draft into answers (even if empty)
       setAnswers((prev) => ({ ...prev, [current.id]: auto ? (prev[current.id] ?? '') : draft }));
 
       if (indexRef.current >= assignedQuestions.length - 1) {
@@ -110,7 +104,6 @@ export const QuizTake: React.FC = () => {
     if (finished) return;
     if (index <= 0) return;
 
-    // Save current draft before going back
     if (current) setAnswers((prev) => ({ ...prev, [current.id]: draft }));
     setIndex((i) => Math.max(0, i - 1));
   }, [current, draft, finished, index]);
@@ -137,11 +130,11 @@ export const QuizTake: React.FC = () => {
     return (
       <div className="max-w-2xl mx-auto bg-card border border-border rounded-2xl p-6">
         <h1 className="text-2xl font-bold text-foreground mb-2">{t.representativeLogin}</h1>
-        <p className="text-muted-foreground mb-6">Missing login code.</p>
+        <p className="text-muted-foreground mb-6">{t.missingLoginCode}</p>
         <Link to="/quiz">
           <Button variant="outline">
             <FiArrowLeft className="w-4 h-4 mr-2" />
-            Back to Quiz Portal
+            {t.backToPortal}
           </Button>
         </Link>
       </div>
@@ -152,11 +145,11 @@ export const QuizTake: React.FC = () => {
     return (
       <div className="max-w-2xl mx-auto bg-card border border-border rounded-2xl p-6">
         <h1 className="text-2xl font-bold text-foreground mb-2">{t.error}</h1>
-        <p className="text-muted-foreground mb-6">Unable to load quiz questions.</p>
+        <p className="text-muted-foreground mb-6">{t.unableToLoadQuestions}</p>
         <Link to="/quiz">
           <Button variant="outline">
             <FiArrowLeft className="w-4 h-4 mr-2" />
-            Back to Quiz Portal
+            {t.backToPortal}
           </Button>
         </Link>
       </div>
@@ -165,10 +158,10 @@ export const QuizTake: React.FC = () => {
 
   if (finished) {
     return (
-      <div className="max-w-3xl mx-auto bg-card border border-border rounded-2xl p-8">
+      <div dir={isRTL ? 'rtl' : 'ltr'} className="max-w-3xl mx-auto bg-card border border-border rounded-2xl p-8">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground mb-1">Quiz Completed</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-1">{t.quizCompleted}</h1>
             <p className="text-muted-foreground">
               {repName} • {repHouse}
             </p>
@@ -180,15 +173,15 @@ export const QuizTake: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="rounded-xl bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground">Questions</p>
+            <p className="text-sm text-muted-foreground">{t.questions}</p>
             <p className="text-2xl font-bold text-foreground">{assignedQuestions.length}</p>
           </div>
           <div className="rounded-xl bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground">House</p>
+            <p className="text-sm text-muted-foreground">{t.house}</p>
             <p className="text-2xl font-bold text-foreground">{repHouse}</p>
           </div>
           <div className="rounded-xl bg-muted/30 p-4">
-            <p className="text-sm text-muted-foreground">Score</p>
+            <p className="text-sm text-muted-foreground">{t.score}</p>
             <p className="text-2xl font-bold text-foreground">{totalScore}</p>
           </div>
         </div>
@@ -196,12 +189,12 @@ export const QuizTake: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-3">
           <Link to="/quiz" className="flex-1">
             <Button className="w-full" variant="outline">
-              Back to Portal
+              {t.backToPortal}
             </Button>
           </Link>
           <Button className="flex-1" onClick={() => window.location.reload()}>
             <FiRefreshCw className="w-4 h-4 mr-2" />
-            Retry Demo
+            {t.retryDemo}
           </Button>
         </div>
       </div>
@@ -232,7 +225,7 @@ export const QuizTake: React.FC = () => {
 
         {/* Question */}
         <div className="rounded-xl bg-muted/30 p-5 mb-6">
-          <p className="text-sm text-muted-foreground mb-2">Question {index + 1}</p>
+          <p className="text-sm text-muted-foreground mb-2">{t.question} {index + 1}</p>
           <p className="text-lg md:text-xl font-semibold text-foreground leading-relaxed">{questionText}</p>
         </div>
 
@@ -252,15 +245,15 @@ export const QuizTake: React.FC = () => {
 
           {current.type === 'true_false' && (
             <div className="grid grid-cols-2 gap-3">
-              {['True', 'False'].map((opt) => (
+              {[{ key: 'True', label: t.trueLabel }, { key: 'False', label: t.falseLabel }].map((opt) => (
                 <Button
-                  key={opt}
+                  key={opt.key}
                   type="button"
-                  variant={draft === opt ? 'default' : 'outline'}
+                  variant={draft === opt.key ? 'default' : 'outline'}
                   className="h-12"
-                  onClick={() => setDraft(opt)}
+                  onClick={() => setDraft(opt.key)}
                 >
-                  {opt}
+                  {opt.label}
                 </Button>
               ))}
             </div>
@@ -270,7 +263,7 @@ export const QuizTake: React.FC = () => {
             <Input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Type your answer"
+              placeholder={t.typeYourAnswer}
               className="h-12"
             />
           )}
@@ -287,7 +280,7 @@ export const QuizTake: React.FC = () => {
             {index >= assignedQuestions.length - 1 ? (
               <>
                 <FiFlag className="w-4 h-4 mr-2" />
-                Finish
+                {t.finish}
               </>
             ) : (
               <>
