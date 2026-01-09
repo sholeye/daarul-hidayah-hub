@@ -82,6 +82,17 @@ interface Translations {
   pts: string;
   noUpcoming: string;
   noPastResults: string;
+  quizCompleted: string;
+  question: string;
+  house: string;
+  retryDemo: string;
+  backToPortal: string;
+  typeYourAnswer: string;
+  finish: string;
+  missingLoginCode: string;
+  unableToLoadQuestions: string;
+  trueLabel: string;
+  falseLabel: string;
   
   // Admin Dashboard
   dashboard: string;
@@ -107,6 +118,8 @@ interface Translations {
   settings: string;
   signOut: string;
   adminPortal: string;
+  instructorPortal: string;
+  studentPortal: string;
   
   // Quiz Management
   quizManagement: string;
@@ -136,6 +149,13 @@ interface Translations {
   loginCredentials: string;
   copyCode: string;
   codeCopied: string;
+  
+  // Footer
+  quickLinks: string;
+  contactUs: string;
+  allRightsReserved: string;
+  director: string;
+  footerDescription: string;
   
   // Common
   readMore: string;
@@ -170,6 +190,10 @@ interface Translations {
   paid: string;
   unpaid: string;
   partial: string;
+  myClasses: string;
+  profile: string;
+  fees: string;
+  logout: string;
 }
 
 // English translations
@@ -239,6 +263,17 @@ const en: Translations = {
   pts: 'pts',
   noUpcoming: 'No upcoming competition scheduled.',
   noPastResults: 'No past competitions yet.',
+  quizCompleted: 'Quiz Completed',
+  question: 'Question',
+  house: 'House',
+  retryDemo: 'Retry Demo',
+  backToPortal: 'Back to Portal',
+  typeYourAnswer: 'Type your answer',
+  finish: 'Finish',
+  missingLoginCode: 'Missing login code.',
+  unableToLoadQuestions: 'Unable to load quiz questions.',
+  trueLabel: 'True',
+  falseLabel: 'False',
   
   dashboard: 'Dashboard',
   welcomeBack: 'Welcome back!',
@@ -262,6 +297,8 @@ const en: Translations = {
   settings: 'Settings',
   signOut: 'Sign Out',
   adminPortal: 'Admin Portal',
+  instructorPortal: 'Instructor Portal',
+  studentPortal: 'Student Portal',
   
   quizManagement: 'Quiz Management',
   createCompetition: 'Create Competition',
@@ -323,6 +360,17 @@ const en: Translations = {
   paid: 'Paid',
   unpaid: 'Unpaid',
   partial: 'Partial',
+  myClasses: 'My Classes',
+  profile: 'Profile',
+  fees: 'Fees',
+  logout: 'Logout',
+  
+  // Footer
+  quickLinks: 'Quick Links',
+  contactUs: 'Contact Us',
+  allRightsReserved: 'All rights reserved.',
+  director: 'Director',
+  footerDescription: 'Providing quality Islamic and Arabic education with modern IT skills for the future generation.',
 };
 
 // Arabic translations
@@ -392,6 +440,17 @@ const ar: Translations = {
   pts: 'نقطة',
   noUpcoming: 'لا توجد مسابقة قادمة مجدولة.',
   noPastResults: 'لا توجد مسابقات سابقة بعد.',
+  quizCompleted: 'اكتملت المسابقة',
+  question: 'سؤال',
+  house: 'البيت',
+  retryDemo: 'إعادة العرض التجريبي',
+  backToPortal: 'العودة للبوابة',
+  typeYourAnswer: 'اكتب إجابتك',
+  finish: 'إنهاء',
+  missingLoginCode: 'رمز الدخول مفقود.',
+  unableToLoadQuestions: 'تعذر تحميل أسئلة المسابقة.',
+  trueLabel: 'صح',
+  falseLabel: 'خطأ',
   
   dashboard: 'لوحة التحكم',
   welcomeBack: 'مرحباً بعودتك!',
@@ -415,6 +474,8 @@ const ar: Translations = {
   settings: 'الإعدادات',
   signOut: 'تسجيل الخروج',
   adminPortal: 'بوابة الإدارة',
+  instructorPortal: 'بوابة المعلم',
+  studentPortal: 'بوابة الطالب',
   
   quizManagement: 'إدارة المسابقات',
   createCompetition: 'إنشاء مسابقة',
@@ -476,6 +537,17 @@ const ar: Translations = {
   paid: 'مدفوع',
   unpaid: 'غير مدفوع',
   partial: 'جزئي',
+  myClasses: 'فصولي',
+  profile: 'الملف الشخصي',
+  fees: 'الرسوم',
+  logout: 'خروج',
+  
+  // Footer
+  quickLinks: 'روابط سريعة',
+  contactUs: 'اتصل بنا',
+  allRightsReserved: 'جميع الحقوق محفوظة.',
+  director: 'المدير',
+  footerDescription: 'تقديم تعليم إسلامي وعربي عالي الجودة مع مهارات تقنية المعلومات الحديثة للجيل القادم.',
 };
 
 // All translations

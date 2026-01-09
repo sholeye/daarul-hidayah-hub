@@ -1,10 +1,6 @@
 /**
  * =============================================================================
- * ADMIN LAYOUT
- * =============================================================================
- * 
- * Main layout wrapper for the admin dashboard with sidebar navigation.
- * Features responsive design and theme toggle.
+ * ADMIN LAYOUT - with i18n support
  * =============================================================================
  */
 
@@ -12,33 +8,32 @@ import React from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FiHome, FiUsers, FiCalendar, FiDollarSign, FiFileText, 
-  FiBell, FiSettings, FiLogOut, FiMenu, FiX, FiMoon, FiSun 
+  FiBell, FiSettings, FiLogOut, FiMenu, FiX, FiMoon, FiSun, FiAward 
 } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/features/app/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-
-// Navigation items configuration
-import { FiAward } from 'react-icons/fi';
-
-// Navigation items configuration
-const navItems = [
-  { icon: FiHome, label: 'Dashboard', path: '/admin' },
-  { icon: FiUsers, label: 'Students', path: '/admin/students' },
-  { icon: FiCalendar, label: 'Attendance', path: '/admin/attendance' },
-  { icon: FiDollarSign, label: 'Finance', path: '/admin/finance' },
-  { icon: FiFileText, label: 'Results', path: '/admin/results' },
-  { icon: FiAward, label: 'Quiz', path: '/admin/quiz' },
-  { icon: FiBell, label: 'Announcements', path: '/admin/announcements' },
-  { icon: FiSettings, label: 'Settings', path: '/admin/settings' },
-];
 
 export const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { t, isRTL } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+  // Navigation items with translations
+  const navItems = [
+    { icon: FiHome, label: t.dashboard, path: '/admin' },
+    { icon: FiUsers, label: t.students, path: '/admin/students' },
+    { icon: FiCalendar, label: t.attendance, path: '/admin/attendance' },
+    { icon: FiDollarSign, label: t.finance, path: '/admin/finance' },
+    { icon: FiFileText, label: t.results, path: '/admin/results' },
+    { icon: FiAward, label: t.quiz, path: '/admin/quiz' },
+    { icon: FiBell, label: t.announcements, path: '/admin/announcements' },
+    { icon: FiSettings, label: t.settings, path: '/admin/settings' },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -46,10 +41,10 @@ export const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
+    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-background flex w-full">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-sidebar transform transition-transform duration-300 ease-out lg:translate-x-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      <aside className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50 w-72 bg-sidebar transform transition-transform duration-300 ease-out lg:translate-x-0 ${
+        sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
           {/* Logo section */}
@@ -59,8 +54,8 @@ export const AdminLayout: React.FC = () => {
                 <span className="text-sidebar-primary-foreground font-bold text-xl">د</span>
               </div>
               <div>
-                <h1 className="font-bold text-lg text-sidebar-foreground">Daarul Hidayah</h1>
-                <p className="text-xs text-sidebar-foreground/60">Admin Portal</p>
+                <h1 className="font-bold text-lg text-sidebar-foreground">{t.schoolName}</h1>
+                <p className="text-xs text-sidebar-foreground/60">{t.adminPortal}</p>
               </div>
             </div>
           </div>
@@ -105,14 +100,14 @@ export const AdminLayout: React.FC = () => {
               onClick={handleLogout}
             >
               <FiLogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              {t.signOut}
             </Button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-72 min-h-screen flex flex-col">
+      <div className={`flex-1 ${isRTL ? 'lg:mr-72' : 'lg:ml-72'} min-h-screen flex flex-col`}>
         {/* Header */}
         <header className="sticky top-0 z-40 h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center px-4 lg:px-8">
           <button 

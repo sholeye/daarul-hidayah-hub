@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * INSTRUCTOR LAYOUT
+ * INSTRUCTOR LAYOUT - with i18n support
  * =============================================================================
  */
 
@@ -9,33 +9,35 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { FiHome, FiUsers, FiCalendar, FiFileText, FiLogOut, FiMoon, FiSun, FiMenu, FiX } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/features/app/ThemeContext';
-
-const navItems = [
-  { icon: FiHome, label: 'Dashboard', path: '/instructor' },
-  { icon: FiUsers, label: 'My Classes', path: '/instructor/classes' },
-  { icon: FiCalendar, label: 'Attendance', path: '/instructor/attendance' },
-  { icon: FiFileText, label: 'Results', path: '/instructor/results' },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const InstructorLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+  const navItems = [
+    { icon: FiHome, label: t.dashboard, path: '/instructor' },
+    { icon: FiUsers, label: t.myClasses, path: '/instructor/classes' },
+    { icon: FiCalendar, label: t.attendance, path: '/instructor/attendance' },
+    { icon: FiFileText, label: t.results, path: '/instructor/results' },
+  ];
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-background">
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-40 px-4 flex items-center justify-between">
         <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-muted"><FiMenu className="w-6 h-6" /></button>
-        <span className="font-semibold text-foreground">Instructor Portal</span>
+        <span className="font-semibold text-foreground">{t.instructorPortal}</span>
         <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-muted">{theme === 'dark' ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}</button>
       </header>
       {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40" onClick={() => setSidebarOpen(false)} />}
-      <aside className={`fixed top-0 left-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed top-0 ${isRTL ? 'right-0' : 'left-0'} h-full w-64 bg-card border-${isRTL ? 'l' : 'r'} border-border z-50 transform transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'}`}>
         <div className="h-16 px-6 flex items-center justify-between border-b border-border">
-          <div><h1 className="font-bold text-foreground">Daarul Hidayah</h1><p className="text-xs text-muted-foreground">Instructor Portal</p></div>
+          <div><h1 className="font-bold text-foreground">{t.schoolName}</h1><p className="text-xs text-muted-foreground">{t.instructorPortal}</p></div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-lg hover:bg-muted"><FiX className="w-5 h-5" /></button>
         </div>
         <nav className="p-4 space-y-2">
@@ -51,10 +53,10 @@ export const InstructorLayout: React.FC = () => {
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center"><span className="text-primary-foreground font-bold">{user?.name?.[0] || 'I'}</span></div>
             <div className="flex-1 min-w-0"><p className="font-medium text-foreground truncate">{user?.name || 'Instructor'}</p><p className="text-xs text-muted-foreground truncate">{user?.email}</p></div>
           </div>
-          <button onClick={handleLogout} className="w-full p-2 rounded-lg hover:bg-destructive/10 text-destructive flex items-center justify-center gap-2"><FiLogOut className="w-5 h-5" /><span>Logout</span></button>
+          <button onClick={handleLogout} className="w-full p-2 rounded-lg hover:bg-destructive/10 text-destructive flex items-center justify-center gap-2"><FiLogOut className="w-5 h-5" /><span>{t.logout}</span></button>
         </div>
       </aside>
-      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen"><div className="p-6 lg:p-8"><Outlet /></div></main>
+      <main className={`${isRTL ? 'lg:mr-64' : 'lg:ml-64'} pt-16 lg:pt-0 min-h-screen`}><div className="p-6 lg:p-8"><Outlet /></div></main>
     </div>
   );
 };
