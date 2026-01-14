@@ -1,16 +1,17 @@
 /**
  * =============================================================================
- * RESULTS MANAGEMENT PAGE
+ * RESULTS MANAGEMENT PAGE (Admin - View Only)
  * =============================================================================
  * 
- * Upload, manage, and generate PDF results with fee-gating logic.
+ * Admin can only VIEW results and download PDFs.
+ * Instructors are responsible for uploading/editing results.
  * =============================================================================
  */
 
 import React, { useState } from 'react';
 import { 
-  FiFileText, FiPlus, FiSearch, FiDownload, FiX,
-  FiEdit2, FiEye, FiLock, FiUnlock, FiTrash2
+  FiFileText, FiSearch, FiDownload,
+  FiEye, FiLock, FiUnlock, FiX
 } from 'react-icons/fi';
 import { mockStudents, mockResults } from '@/data/mockData';
 import { Student, StudentResult } from '@/types';
@@ -21,167 +22,93 @@ import { toast } from 'sonner';
 import { formatDate, calculateGrade, getGradeRemarks } from '@/utils/helpers';
 import jsPDF from 'jspdf';
 
-// Subject list
-const SUBJECTS = [
-  'Arabic Language',
-  'Islamic Studies',
-  'Quran Memorization',
-  'Hadith',
-  'Fiqh',
-  'English Language',
-  'Mathematics',
-  'IT/Computer'
-];
-
 // ---------------------------------------------------------------------------
-// Result Entry Modal
+// Result View Modal
 // ---------------------------------------------------------------------------
-interface ResultModalProps {
+interface ResultViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   student: Student | null;
-  existingResult?: StudentResult;
-  onSubmit: (result: Partial<StudentResult>) => void;
+  result: StudentResult | null;
 }
 
-const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, student, existingResult, onSubmit }) => {
-  const [scores, setScores] = useState<Record<string, number>>(
-    existingResult?.subjects.reduce((acc, s) => ({ ...acc, [s.subject]: s.score }), {}) || {}
-  );
-  const [teacherRemarks, setTeacherRemarks] = useState(existingResult?.teacherRemarks || '');
-  const [principalRemarks, setPrincipalRemarks] = useState(existingResult?.principalRemarks || '');
-  const [position, setPosition] = useState(existingResult?.position?.toString() || '1');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!student) return;
-
-    const subjects = SUBJECTS.map(subject => {
-      const score = scores[subject] || 0;
-      const grade = calculateGrade(score);
-      return {
-        subject,
-        score,
-        grade,
-        remarks: getGradeRemarks(grade),
-      };
-    });
-
-    const totalScore = subjects.reduce((sum, s) => sum + s.score, 0);
-    const averageScore = totalScore / subjects.length;
-
-    onSubmit({
-      studentId: student.studentId,
-      term: 'First Term',
-      session: '2024/2025',
-      subjects,
-      totalScore,
-      averageScore,
-      position: parseInt(position),
-      teacherRemarks,
-      principalRemarks,
-      createdAt: new Date().toISOString().split('T')[0],
-    });
-
-    onClose();
-  };
-
-  if (!isOpen || !student) return null;
+const ResultViewModal: React.FC<ResultViewModalProps> = ({ isOpen, onClose, student, result }) => {
+  if (!isOpen || !student || !result) return null;
 
   return (
     <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-foreground">
-              {existingResult ? 'Edit Result' : 'Enter Result'}
-            </h2>
-            <p className="text-sm text-muted-foreground">{student.fullName} - {student.studentId}</p>
+            <h2 className="text-xl font-bold text-foreground">View Result</h2>
+            <p className="text-sm text-muted-foreground">{student.fullName} - {result.term}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors">
             <FiX className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Subject Scores */}
+        <div className="p-6 space-y-6">
+          {/* Summary */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-primary/5 rounded-xl text-center">
+              <p className="text-2xl font-bold text-primary">{result.totalScore}</p>
+              <p className="text-sm text-muted-foreground">Total Score</p>
+            </div>
+            <div className="p-4 bg-secondary/5 rounded-xl text-center">
+              <p className="text-2xl font-bold text-secondary">{result.averageScore.toFixed(1)}%</p>
+              <p className="text-sm text-muted-foreground">Average</p>
+            </div>
+            <div className="p-4 bg-accent/10 rounded-xl text-center">
+              <p className="text-2xl font-bold text-accent-foreground">{result.position}</p>
+              <p className="text-sm text-muted-foreground">Position</p>
+            </div>
+          </div>
+
+          {/* Subjects */}
           <div>
-            <h3 className="text-sm font-semibold text-foreground mb-4">Subject Scores (0-100)</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {SUBJECTS.map(subject => (
-                <div key={subject}>
-                  <label className="block text-sm text-muted-foreground mb-1">{subject}</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={scores[subject] || ''}
-                    onChange={(e) => setScores({ ...scores, [subject]: parseInt(e.target.value) || 0 })}
-                    placeholder="0"
-                  />
+            <h3 className="font-semibold text-foreground mb-3">Subject Scores</h3>
+            <div className="space-y-2">
+              {result.subjects.map((subject) => (
+                <div key={subject.subject} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <span className="text-foreground">{subject.subject}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-foreground">{subject.score}</span>
+                    <Badge variant={subject.grade === 'A+' || subject.grade === 'A' ? 'paid' : subject.grade === 'F' ? 'absent' : 'present'}>
+                      {subject.grade}
+                    </Badge>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Position */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Position in Class</label>
-            <Input
-              type="number"
-              min="1"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-            />
-          </div>
-
           {/* Remarks */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Teacher's Remarks</label>
-              <textarea
-                value={teacherRemarks}
-                onChange={(e) => setTeacherRemarks(e.target.value)}
-                className="w-full h-24 px-3 py-2 rounded-lg border border-input bg-background text-foreground resize-none"
-                placeholder="Enter teacher's remarks..."
-              />
+            <div className="p-4 bg-muted/30 rounded-xl">
+              <p className="text-sm text-muted-foreground mb-1">Teacher's Remarks</p>
+              <p className="text-foreground">{result.teacherRemarks || 'N/A'}</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Principal's Remarks</label>
-              <textarea
-                value={principalRemarks}
-                onChange={(e) => setPrincipalRemarks(e.target.value)}
-                className="w-full h-24 px-3 py-2 rounded-lg border border-input bg-background text-foreground resize-none"
-                placeholder="Enter principal's remarks..."
-              />
+            <div className="p-4 bg-muted/30 rounded-xl">
+              <p className="text-sm text-muted-foreground mb-1">Principal's Remarks</p>
+              <p className="text-foreground">{result.principalRemarks || 'N/A'}</p>
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-border">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1">
-              <FiFileText className="w-4 h-4 mr-2" />
-              {existingResult ? 'Update Result' : 'Save Result'}
-            </Button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
 
 // ---------------------------------------------------------------------------
-// Main Results Page
+// Main Results Page (Admin - View Only)
 // ---------------------------------------------------------------------------
 export const ResultsPage: React.FC = () => {
   const [students] = useState<Student[]>(mockStudents);
-  const [results, setResults] = useState<StudentResult[]>(mockResults);
+  const [results] = useState<StudentResult[]>(mockResults);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [showResultModal, setShowResultModal] = useState(false);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [viewingResult, setViewingResult] = useState<StudentResult | null>(null);
 
   // Filter students
   const studentsWithResults = students
@@ -191,22 +118,6 @@ export const ResultsPage: React.FC = () => {
       ...student,
       result: results.find(r => r.studentId === student.studentId),
     }));
-
-  // Handle result submission
-  const handleResultSubmit = (resultData: Partial<StudentResult>) => {
-    const existingIndex = results.findIndex(r => r.studentId === resultData.studentId);
-    
-    if (existingIndex >= 0) {
-      setResults(results.map((r, i) => 
-        i === existingIndex ? { ...r, ...resultData } as StudentResult : r
-      ));
-      toast.success('Result updated successfully!');
-    } else {
-      const newResult = { ...resultData, id: Date.now().toString() } as StudentResult;
-      setResults([newResult, ...results]);
-      toast.success('Result saved successfully!');
-    }
-  };
 
   // Generate Result PDF
   const generateResultPDF = (student: Student, result: StudentResult) => {
@@ -302,7 +213,7 @@ export const ResultsPage: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Results</h1>
-        <p className="text-muted-foreground mt-1">Manage student academic results</p>
+        <p className="text-muted-foreground mt-1">View student academic results (Instructors upload results)</p>
       </div>
 
       {/* Search */}
@@ -369,29 +280,31 @@ export const ResultsPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => { setSelectedStudent(student); setShowResultModal(true); }}
-                      >
-                        {student.result ? <FiEdit2 className="w-4 h-4" /> : <FiPlus className="w-4 h-4" />}
-                        <span className="ml-1 hidden sm:inline">
-                          {student.result ? 'Edit' : 'Add'}
-                        </span>
-                      </Button>
                       {student.result && (
-                        <button 
-                          onClick={() => generateResultPDF(student, student.result!)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            student.feeStatus === 'paid' 
-                              ? 'hover:bg-muted text-muted-foreground hover:text-foreground' 
-                              : 'opacity-50 cursor-not-allowed text-muted-foreground'
-                          }`}
-                          title={student.feeStatus === 'paid' ? 'Download PDF' : 'Fee not paid'}
-                          disabled={student.feeStatus !== 'paid'}
-                        >
-                          <FiDownload className="w-4 h-4" />
-                        </button>
+                        <>
+                          <button 
+                            onClick={() => { setViewingStudent(student); setViewingResult(student.result!); }}
+                            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                            title="View Result"
+                          >
+                            <FiEye className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => generateResultPDF(student, student.result!)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              student.feeStatus === 'paid' 
+                                ? 'hover:bg-muted text-muted-foreground hover:text-foreground' 
+                                : 'opacity-50 cursor-not-allowed text-muted-foreground'
+                            }`}
+                            title={student.feeStatus === 'paid' ? 'Download PDF' : 'Fee not paid'}
+                            disabled={student.feeStatus !== 'paid'}
+                          >
+                            <FiDownload className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                      {!student.result && (
+                        <span className="text-sm text-muted-foreground">Awaiting instructor</span>
                       )}
                     </div>
                   </td>
@@ -402,13 +315,12 @@ export const ResultsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Result Modal */}
-      <ResultModal
-        isOpen={showResultModal}
-        onClose={() => { setShowResultModal(false); setSelectedStudent(null); }}
-        student={selectedStudent}
-        existingResult={selectedStudent ? results.find(r => r.studentId === selectedStudent.studentId) : undefined}
-        onSubmit={handleResultSubmit}
+      {/* Result View Modal */}
+      <ResultViewModal
+        isOpen={!!viewingResult}
+        onClose={() => { setViewingStudent(null); setViewingResult(null); }}
+        student={viewingStudent}
+        result={viewingResult}
       />
     </div>
   );
