@@ -3,24 +3,22 @@
  * SETTINGS PAGE
  * =============================================================================
  * 
- * School and user settings management.
+ * School and user settings management (theme toggle removed - already in nav).
  * =============================================================================
  */
 
 import React, { useState } from 'react';
 import { 
-  FiSettings, FiUser, FiMail, FiPhone, FiMapPin, FiSave,
-  FiMoon, FiSun, FiGlobe, FiLock
+  FiUser, FiMail, FiPhone, FiMapPin, FiSave,
+  FiGlobe, FiLock
 } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
-import { useTheme } from '@/features/app/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
 
   // School settings (mock)
   const [schoolSettings, setSchoolSettings] = useState({
@@ -55,37 +53,6 @@ export const SettingsPage: React.FC = () => {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground mt-1">Manage school and profile settings</p>
-      </div>
-
-      {/* Appearance */}
-      <div className="bg-card rounded-2xl border border-border p-6 shadow-soft">
-        <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-          <FiSettings className="w-5 h-5 text-primary" />
-          Appearance
-        </h2>
-        
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium text-foreground">Theme</p>
-            <p className="text-sm text-muted-foreground">Choose light or dark mode</p>
-          </div>
-          <button
-            onClick={toggleTheme}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
-          >
-            {theme === 'light' ? (
-              <>
-                <FiSun className="w-5 h-5" />
-                <span>Light</span>
-              </>
-            ) : (
-              <>
-                <FiMoon className="w-5 h-5" />
-                <span>Dark</span>
-              </>
-            )}
-          </button>
-        </div>
       </div>
 
       {/* School Settings */}
