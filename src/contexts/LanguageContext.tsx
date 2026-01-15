@@ -1,26 +1,23 @@
 /**
  * LanguageContext - Comprehensive i18n support for English/Arabic
- * 
- * Usage: Wrap app with LanguageProvider, use useLanguage() hook
- * to access current language, translations, and toggle function.
+ * Complete coverage for all UI elements across the application
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// Supported languages
 export type Language = 'en' | 'ar';
 
-// Translation keys structure - comprehensive for all UI text
 interface Translations {
-  // Navbar
+  // Navbar & Navigation
   home: string;
   about: string;
   curriculum: string;
   contact: string;
   quiz: string;
+  gallery: string;
   portalLogin: string;
   
-  // Hero
+  // Hero Section
   establishedEducation: string;
   schoolName: string;
   schoolSubtitle: string;
@@ -32,23 +29,114 @@ interface Translations {
   programs: string;
   students: string;
   qualityEducation: string;
+  yearsOfExcellence: string;
+  nurturingMinds: string;
+  heroDescription: string;
   
-  // About
+  // About Section
   aboutTitle: string;
   aboutSubtitle: string;
+  aboutDescription: string;
   ourMission: string;
   missionText: string;
   ourVision: string;
   visionText: string;
+  ourValues: string;
+  valuesText: string;
+  ourCommunity: string;
+  communityText: string;
+  underDirection: string;
   
-  // Programs
+  // Islamic Values Section
+  islamicValuesTitle: string;
+  islamicValuesSubtitle: string;
+  quranSunnah: string;
+  quranSunnahText: string;
+  ikhlas: string;
+  ikhlasText: string;
+  tarbiyyah: string;
+  tarbiyyahText: string;
+  arabicMastery: string;
+  arabicMasteryText: string;
+  seekKnowledge: string;
+  prophetQuote: string;
+  
+  // Academic Structure
+  academicStructure: string;
+  academicStructureSubtitle: string;
+  preparatoryLevel: string;
+  preparatoryDesc: string;
+  primaryLevel: string;
+  primaryDesc: string;
+  schoolFees: string;
+  perTerm: string;
+  
+  // Curriculum Section
+  curriculumTitle: string;
+  curriculumSubtitle: string;
+  arabicLanguage: string;
+  islamicStudies: string;
+  quranMemorization: string;
+  englishLanguage: string;
+  mathematics: string;
+  computerIT: string;
+  hadith: string;
+  fiqh: string;
+  qualifiedTeachers: string;
+  qualifiedTeachersText: string;
+  smallClassSizes: string;
+  smallClassSizesText: string;
+  structuredSchedule: string;
+  structuredScheduleText: string;
+  
+  // Programs Section
   specialPrograms: string;
   programsSubtitle: string;
   tahfizProgram: string;
+  tahfizProgramAr: string;
+  tahfizDesc: string;
   itProgram: string;
+  itProgramAr: string;
+  itProgramDesc: string;
+  newLabel: string;
+  ongoingLabel: string;
+  structuredMemorization: string;
+  tajweedTraining: string;
+  regularRevision: string;
+  certifiedCompletion: string;
+  htmlStructure: string;
+  cssStyling: string;
+  responsiveDesign: string;
+  handsOnProjects: string;
   learnMore: string;
   
-  // Quiz
+  // Events Section
+  eventsTitle: string;
+  eventsSubtitle: string;
+  ongoing: string;
+  upcoming: string;
+  noOngoingEvents: string;
+  
+  // Announcements
+  announcementsTitle: string;
+  announcementsSubtitle: string;
+  latestUpdates: string;
+  
+  // Contact CTA
+  beginJourney: string;
+  beginJourneyText: string;
+  accessPortal: string;
+  
+  // Gallery
+  galleryTitle: string;
+  gallerySubtitle: string;
+  viewGallery: string;
+  schoolLife: string;
+  learningMoments: string;
+  islamicEducation: string;
+  studentActivities: string;
+  
+  // Quiz Competition
   quizCompetition: string;
   quizSubtitle: string;
   houses: string;
@@ -94,7 +182,7 @@ interface Translations {
   trueLabel: string;
   falseLabel: string;
   
-  // Admin Dashboard
+  // Admin Dashboard & Portal
   dashboard: string;
   welcomeBack: string;
   schoolOverview: string;
@@ -111,7 +199,7 @@ interface Translations {
   late: string;
   absent: string;
   
-  // Admin Sidebar
+  // Admin Sidebar & Navigation
   attendance: string;
   finance: string;
   results: string;
@@ -120,6 +208,27 @@ interface Translations {
   adminPortal: string;
   instructorPortal: string;
   studentPortal: string;
+  
+  // Student Management
+  addStudent: string;
+  editStudent: string;
+  studentDetails: string;
+  studentId: string;
+  fullName: string;
+  dateOfBirth: string;
+  address: string;
+  guardianInfo: string;
+  guardianName: string;
+  guardianPhone: string;
+  occupation: string;
+  stateOfOrigin: string;
+  enrollmentDate: string;
+  feeStatus: string;
+  
+  // Password Reset
+  requestPasswordReset: string;
+  passwordResetRequested: string;
+  passwordResetInfo: string;
   
   // Quiz Management
   quizManagement: string;
@@ -157,7 +266,7 @@ interface Translations {
   director: string;
   footerDescription: string;
   
-  // Common
+  // Common UI Elements
   readMore: string;
   loading: string;
   error: string;
@@ -194,17 +303,29 @@ interface Translations {
   profile: string;
   fees: string;
   logout: string;
+  selectClass: string;
+  selectDate: string;
+  noDataAvailable: string;
+  personalInfo: string;
+  academicInfo: string;
+  class: string;
+  sex: string;
+  male: string;
+  female: string;
+  origin: string;
 }
 
-// English translations
 const en: Translations = {
+  // Navbar
   home: 'Home',
   about: 'About',
   curriculum: 'Curriculum',
   contact: 'Contact',
   quiz: 'Quiz',
+  gallery: 'Gallery',
   portalLogin: 'Portal Login',
   
+  // Hero
   establishedEducation: 'Established Islamic Education',
   schoolName: 'Daarul Hidayah',
   schoolSubtitle: 'Islamic & Arabic School',
@@ -216,20 +337,114 @@ const en: Translations = {
   programs: 'Programs',
   students: 'Students',
   qualityEducation: 'Quality Education',
+  yearsOfExcellence: 'Years of Excellence',
+  nurturingMinds: 'Nurturing young minds with Islamic values',
+  heroDescription: 'Located in Ita Ika, Abeokuta, we provide quality Islamic and Arabic education rooted in the Quran and Sunnah, preparing students for success in both worlds.',
   
+  // About
   aboutTitle: 'About Us',
   aboutSubtitle: 'Nurturing young minds with Islamic values and modern education',
+  aboutDescription: 'Located in Ita Ika, Abeokuta, we are an onsite Islamic and Arabic school dedicated to providing quality education rooted in Islamic values and modern educational standards.',
   ourMission: 'Our Mission',
-  missionText: 'To provide quality Islamic and Arabic education that prepares students for both spiritual excellence and worldly success.',
+  missionText: 'To nurture students in the authentic teachings of Islam while equipping them with modern skills for a balanced life.',
   ourVision: 'Our Vision',
-  visionText: 'To be the leading Islamic educational institution that produces well-rounded individuals grounded in faith.',
+  visionText: 'To produce graduates who are exemplary Muslims, contributing positively to society with knowledge and character.',
+  ourValues: 'Our Values',
+  valuesText: 'Sincerity (Ikhlas), Knowledge (Ilm), Discipline (Tarbiyyah), and Excellence in all endeavors.',
+  ourCommunity: 'Our Community',
+  communityText: 'A supportive environment where students, teachers, and parents work together for holistic development.',
+  underDirection: 'Under the Direction of',
   
+  // Islamic Values
+  islamicValuesTitle: 'Islamic Values & Discipline',
+  islamicValuesSubtitle: 'Our educational philosophy is grounded in authentic Islamic principles, preparing students for both worldly success and eternal success.',
+  quranSunnah: 'Quran & Sunnah',
+  quranSunnahText: 'Education firmly rooted in the Holy Quran and the authentic Sunnah of Prophet Muhammad (SAW).',
+  ikhlas: 'Ikhlas (Sincerity)',
+  ikhlasText: 'Cultivating pure intentions and sincerity in seeking knowledge for the sake of Allah alone.',
+  tarbiyyah: 'Tarbiyyah (Discipline)',
+  tarbiyyahText: 'Building strong character through Islamic discipline, manners, and ethical conduct.',
+  arabicMastery: 'Arabic Mastery',
+  arabicMasteryText: 'Comprehensive Arabic language instruction to unlock the treasures of Islamic scholarship.',
+  seekKnowledge: '"Seek knowledge from the cradle to the grave."',
+  prophetQuote: '— Prophet Muhammad (SAW)',
+  
+  // Academic Structure
+  academicStructure: 'Academic Structure',
+  academicStructureSubtitle: 'Our school offers a structured learning path from preparatory to primary levels.',
+  preparatoryLevel: 'Preparatory Level',
+  preparatoryDesc: 'Foundation classes building core Islamic and Arabic skills',
+  primaryLevel: 'Primary Level',
+  primaryDesc: 'Advanced Islamic studies with modern academic integration',
+  schoolFees: 'School Fees',
+  perTerm: 'per term',
+  
+  // Curriculum
+  curriculumTitle: 'Our Curriculum',
+  curriculumSubtitle: 'A balanced blend of Islamic sciences, Arabic language, and modern academics designed to prepare students for success in both worlds.',
+  arabicLanguage: 'Arabic Language',
+  islamicStudies: 'Islamic Studies',
+  quranMemorization: 'Quran Memorization',
+  englishLanguage: 'English Language',
+  mathematics: 'Mathematics',
+  computerIT: 'Computer/IT',
+  hadith: 'Hadith',
+  fiqh: 'Fiqh',
+  qualifiedTeachers: 'Qualified Teachers',
+  qualifiedTeachersText: 'Experienced educators dedicated to Islamic and academic excellence.',
+  smallClassSizes: 'Small Class Sizes',
+  smallClassSizesText: 'Personalized attention for every student\'s learning journey.',
+  structuredSchedule: 'Structured Schedule',
+  structuredScheduleText: 'Balanced timetable for Quran, Arabic, and modern subjects.',
+  
+  // Programs
   specialPrograms: 'Special Programs',
-  programsSubtitle: 'Beyond our core curriculum, we offer specialized programs',
+  programsSubtitle: 'Beyond our core curriculum, we offer specialized programs to develop additional skills and deepen Islamic knowledge.',
   tahfizProgram: 'Tahfiz Program',
+  tahfizProgramAr: 'برنامج التحفيظ',
+  tahfizDesc: 'Dedicated Quran memorization program for students committed to preserving the Holy Quran in their hearts.',
   itProgram: 'IT Program',
+  itProgramAr: 'برنامج تقنية المعلومات',
+  itProgramDesc: 'Introduction to web development covering HTML, CSS, and fundamental web design principles.',
+  newLabel: 'New',
+  ongoingLabel: 'Ongoing',
+  structuredMemorization: 'Structured memorization schedule',
+  tajweedTraining: 'Tajweed and recitation training',
+  regularRevision: 'Regular revision sessions',
+  certifiedCompletion: 'Certified upon completion',
+  htmlStructure: 'HTML structure and semantics',
+  cssStyling: 'CSS styling and layouts',
+  responsiveDesign: 'Responsive web design',
+  handsOnProjects: 'Hands-on projects',
   learnMore: 'Learn More',
   
+  // Events
+  eventsTitle: 'School Events',
+  eventsSubtitle: 'Stay updated with our ongoing programs and upcoming events.',
+  ongoing: 'Ongoing',
+  upcoming: 'Upcoming',
+  noOngoingEvents: 'No ongoing events at the moment.',
+  
+  // Announcements
+  announcementsTitle: 'Announcements',
+  announcementsSubtitle: 'Important updates and news from the school.',
+  latestUpdates: 'Latest Updates',
+  
+  // Contact CTA
+  beginJourney: 'Begin Your Child\'s Islamic Education Journey',
+  beginJourneyText: 'Join Daarul Hidayah and give your child the foundation of authentic Islamic knowledge combined with modern education.',
+  accessPortal: 'Access Portal',
+  
+  // Gallery
+  galleryTitle: 'School Gallery',
+  gallerySubtitle: 'Glimpses of life at Daarul Hidayah - learning, growing, and thriving together.',
+  viewGallery: 'View Gallery',
+  schoolLife: 'School Life',
+  learningMoments: 'Learning Moments',
+  islamicEducation: 'Islamic Education',
+  studentActivities: 'Student Activities',
+  
+  // Quiz
   quizCompetition: 'Inter-House Quiz Competition',
   quizSubtitle: 'Weekly knowledge competition between the four houses. Test your Islamic knowledge and earn points for your house every Sunday!',
   houses: 'Houses',
@@ -275,6 +490,7 @@ const en: Translations = {
   trueLabel: 'True',
   falseLabel: 'False',
   
+  // Dashboard
   dashboard: 'Dashboard',
   welcomeBack: 'Welcome back!',
   schoolOverview: "Here's your school overview.",
@@ -291,6 +507,7 @@ const en: Translations = {
   late: 'Late',
   absent: 'Absent',
   
+  // Sidebar
   attendance: 'Attendance',
   finance: 'Finance',
   results: 'Results',
@@ -300,6 +517,28 @@ const en: Translations = {
   instructorPortal: 'Instructor Portal',
   studentPortal: 'Student Portal',
   
+  // Student Management
+  addStudent: 'Add Student',
+  editStudent: 'Edit Student',
+  studentDetails: 'Student Details',
+  studentId: 'Student ID',
+  fullName: 'Full Name',
+  dateOfBirth: 'Date of Birth',
+  address: 'Address',
+  guardianInfo: 'Guardian Information',
+  guardianName: 'Guardian Name',
+  guardianPhone: 'Guardian Phone',
+  occupation: 'Occupation',
+  stateOfOrigin: 'State of Origin',
+  enrollmentDate: 'Enrollment Date',
+  feeStatus: 'Fee Status',
+  
+  // Password Reset
+  requestPasswordReset: 'Request Password Reset',
+  passwordResetRequested: 'Password Reset Requested',
+  passwordResetInfo: 'Your password reset request has been sent to the admin. Please contact the school administration to receive your new password.',
+  
+  // Quiz Management
   quizManagement: 'Quiz Management',
   createCompetition: 'Create Competition',
   addQuestions: 'Add Questions',
@@ -328,6 +567,14 @@ const en: Translations = {
   copyCode: 'Copy Code',
   codeCopied: 'Code Copied!',
   
+  // Footer
+  quickLinks: 'Quick Links',
+  contactUs: 'Contact Us',
+  allRightsReserved: 'All rights reserved.',
+  director: 'Director',
+  footerDescription: 'Providing quality Islamic and Arabic education with modern IT skills for the future generation.',
+  
+  // Common
   readMore: 'Read More',
   loading: 'Loading...',
   error: 'An error occurred',
@@ -364,24 +611,29 @@ const en: Translations = {
   profile: 'Profile',
   fees: 'Fees',
   logout: 'Logout',
-  
-  // Footer
-  quickLinks: 'Quick Links',
-  contactUs: 'Contact Us',
-  allRightsReserved: 'All rights reserved.',
-  director: 'Director',
-  footerDescription: 'Providing quality Islamic and Arabic education with modern IT skills for the future generation.',
+  selectClass: 'Select Class',
+  selectDate: 'Select Date',
+  noDataAvailable: 'No data available',
+  personalInfo: 'Personal Information',
+  academicInfo: 'Academic Information',
+  class: 'Class',
+  sex: 'Sex',
+  male: 'Male',
+  female: 'Female',
+  origin: 'Origin',
 };
 
-// Arabic translations
 const ar: Translations = {
+  // Navbar
   home: 'الرئيسية',
   about: 'من نحن',
   curriculum: 'المنهج',
   contact: 'اتصل بنا',
   quiz: 'المسابقة',
+  gallery: 'المعرض',
   portalLogin: 'تسجيل الدخول',
   
+  // Hero
   establishedEducation: 'التعليم الإسلامي الراسخ',
   schoolName: 'دار الهداية',
   schoolSubtitle: 'مدرسة إسلامية وعربية',
@@ -393,20 +645,114 @@ const ar: Translations = {
   programs: 'البرامج',
   students: 'الطلاب',
   qualityEducation: 'تعليم متميز',
+  yearsOfExcellence: 'سنوات من التميز',
+  nurturingMinds: 'رعاية العقول الشابة بالقيم الإسلامية',
+  heroDescription: 'تقع في إيتا إيكا، أبيوكوتا، نقدم تعليماً إسلامياً وعربياً عالي الجودة متجذراً في القرآن والسنة، لإعداد الطلاب للنجاح في الدنيا والآخرة.',
   
+  // About
   aboutTitle: 'من نحن',
   aboutSubtitle: 'رعاية العقول الشابة بالقيم الإسلامية والتعليم الحديث',
+  aboutDescription: 'تقع في إيتا إيكا، أبيوكوتا، نحن مدرسة إسلامية وعربية ملتزمة بتقديم تعليم عالي الجودة متجذر في القيم الإسلامية والمعايير التعليمية الحديثة.',
   ourMission: 'رسالتنا',
-  missionText: 'تقديم تعليم إسلامي وعربي عالي الجودة يُعد الطلاب للتميز الروحي والنجاح الدنيوي.',
+  missionText: 'تنشئة الطلاب على تعاليم الإسلام الأصيلة مع تزويدهم بالمهارات الحديثة لحياة متوازنة.',
   ourVision: 'رؤيتنا',
-  visionText: 'أن نكون المؤسسة التعليمية الإسلامية الرائدة التي تُخرج أفراداً متكاملين راسخين في الإيمان.',
+  visionText: 'تخريج طلاب مسلمين نموذجيين يساهمون إيجابياً في المجتمع بالعلم والأخلاق.',
+  ourValues: 'قيمنا',
+  valuesText: 'الإخلاص والعلم والتربية والتميز في كل المساعي.',
+  ourCommunity: 'مجتمعنا',
+  communityText: 'بيئة داعمة يعمل فيها الطلاب والمعلمون وأولياء الأمور معاً للتنمية الشاملة.',
+  underDirection: 'تحت إدارة',
   
+  // Islamic Values
+  islamicValuesTitle: 'القيم الإسلامية والتربية',
+  islamicValuesSubtitle: 'تستند فلسفتنا التعليمية إلى المبادئ الإسلامية الأصيلة، لإعداد الطلاب للنجاح الدنيوي والأخروي.',
+  quranSunnah: 'القرآن والسنة',
+  quranSunnahText: 'تعليم راسخ في القرآن الكريم وسنة النبي محمد صلى الله عليه وسلم.',
+  ikhlas: 'الإخلاص',
+  ikhlasText: 'تنمية النوايا الصافية والإخلاص في طلب العلم لوجه الله وحده.',
+  tarbiyyah: 'التربية',
+  tarbiyyahText: 'بناء شخصية قوية من خلال التأديب الإسلامي والآداب والسلوك الأخلاقي.',
+  arabicMastery: 'إتقان العربية',
+  arabicMasteryText: 'تعليم شامل للغة العربية لفتح كنوز العلم الإسلامي.',
+  seekKnowledge: '"اطلبوا العلم من المهد إلى اللحد"',
+  prophetQuote: '— النبي محمد صلى الله عليه وسلم',
+  
+  // Academic Structure
+  academicStructure: 'الهيكل الأكاديمي',
+  academicStructureSubtitle: 'تقدم مدرستنا مساراً تعليمياً منظماً من المستوى التحضيري إلى الابتدائي.',
+  preparatoryLevel: 'المستوى التحضيري',
+  preparatoryDesc: 'فصول تأسيسية لبناء المهارات الإسلامية والعربية الأساسية',
+  primaryLevel: 'المستوى الابتدائي',
+  primaryDesc: 'دراسات إسلامية متقدمة مع دمج أكاديمي حديث',
+  schoolFees: 'الرسوم الدراسية',
+  perTerm: 'للفصل',
+  
+  // Curriculum
+  curriculumTitle: 'منهجنا الدراسي',
+  curriculumSubtitle: 'مزيج متوازن من العلوم الإسلامية واللغة العربية والأكاديميات الحديثة لإعداد الطلاب للنجاح في الدنيا والآخرة.',
+  arabicLanguage: 'اللغة العربية',
+  islamicStudies: 'الدراسات الإسلامية',
+  quranMemorization: 'حفظ القرآن',
+  englishLanguage: 'اللغة الإنجليزية',
+  mathematics: 'الرياضيات',
+  computerIT: 'الحاسوب/تقنية المعلومات',
+  hadith: 'الحديث',
+  fiqh: 'الفقه',
+  qualifiedTeachers: 'معلمون مؤهلون',
+  qualifiedTeachersText: 'معلمون ذوو خبرة ملتزمون بالتميز الإسلامي والأكاديمي.',
+  smallClassSizes: 'فصول صغيرة',
+  smallClassSizesText: 'اهتمام شخصي بمسيرة تعلم كل طالب.',
+  structuredSchedule: 'جدول منظم',
+  structuredScheduleText: 'جدول متوازن للقرآن والعربية والمواد الحديثة.',
+  
+  // Programs
   specialPrograms: 'البرامج الخاصة',
-  programsSubtitle: 'بالإضافة إلى مناهجنا الأساسية، نقدم برامج متخصصة',
+  programsSubtitle: 'بالإضافة إلى مناهجنا الأساسية، نقدم برامج متخصصة لتطوير مهارات إضافية وتعميق المعرفة الإسلامية.',
   tahfizProgram: 'برنامج التحفيظ',
+  tahfizProgramAr: 'برنامج التحفيظ',
+  tahfizDesc: 'برنامج مخصص لحفظ القرآن للطلاب الملتزمين بحفظ القرآن الكريم في قلوبهم.',
   itProgram: 'برنامج تقنية المعلومات',
+  itProgramAr: 'برنامج تقنية المعلومات',
+  itProgramDesc: 'مقدمة في تطوير الويب تغطي HTML وCSS ومبادئ تصميم الويب الأساسية.',
+  newLabel: 'جديد',
+  ongoingLabel: 'مستمر',
+  structuredMemorization: 'جدول حفظ منظم',
+  tajweedTraining: 'تدريب على التجويد والتلاوة',
+  regularRevision: 'جلسات مراجعة منتظمة',
+  certifiedCompletion: 'شهادة عند الإتمام',
+  htmlStructure: 'هيكل HTML ودلالاته',
+  cssStyling: 'تنسيق CSS والتخطيطات',
+  responsiveDesign: 'تصميم ويب متجاوب',
+  handsOnProjects: 'مشاريع عملية',
   learnMore: 'اعرف المزيد',
   
+  // Events
+  eventsTitle: 'الفعاليات المدرسية',
+  eventsSubtitle: 'ابق على اطلاع ببرامجنا الجارية والفعاليات القادمة.',
+  ongoing: 'جارية',
+  upcoming: 'قادمة',
+  noOngoingEvents: 'لا توجد فعاليات جارية حالياً.',
+  
+  // Announcements
+  announcementsTitle: 'الإعلانات',
+  announcementsSubtitle: 'تحديثات وأخبار هامة من المدرسة.',
+  latestUpdates: 'آخر التحديثات',
+  
+  // Contact CTA
+  beginJourney: 'ابدأ رحلة طفلك التعليمية الإسلامية',
+  beginJourneyText: 'انضم إلى دار الهداية وامنح طفلك أساس المعرفة الإسلامية الأصيلة مع التعليم الحديث.',
+  accessPortal: 'الدخول للبوابة',
+  
+  // Gallery
+  galleryTitle: 'معرض المدرسة',
+  gallerySubtitle: 'لمحات من الحياة في دار الهداية - التعلم والنمو والازدهار معاً.',
+  viewGallery: 'عرض المعرض',
+  schoolLife: 'الحياة المدرسية',
+  learningMoments: 'لحظات التعلم',
+  islamicEducation: 'التعليم الإسلامي',
+  studentActivities: 'أنشطة الطلاب',
+  
+  // Quiz
   quizCompetition: 'مسابقة المعرفة بين البيوت',
   quizSubtitle: 'مسابقة معرفية أسبوعية بين البيوت الأربعة. اختبر معرفتك الإسلامية واكسب نقاطاً لبيتك كل يوم أحد!',
   houses: 'البيوت',
@@ -452,6 +798,7 @@ const ar: Translations = {
   trueLabel: 'صح',
   falseLabel: 'خطأ',
   
+  // Dashboard
   dashboard: 'لوحة التحكم',
   welcomeBack: 'مرحباً بعودتك!',
   schoolOverview: 'نظرة عامة على المدرسة.',
@@ -468,6 +815,7 @@ const ar: Translations = {
   late: 'متأخر',
   absent: 'غائب',
   
+  // Sidebar
   attendance: 'الحضور',
   finance: 'المالية',
   results: 'النتائج',
@@ -477,6 +825,28 @@ const ar: Translations = {
   instructorPortal: 'بوابة المعلم',
   studentPortal: 'بوابة الطالب',
   
+  // Student Management
+  addStudent: 'إضافة طالب',
+  editStudent: 'تعديل بيانات الطالب',
+  studentDetails: 'تفاصيل الطالب',
+  studentId: 'رقم الطالب',
+  fullName: 'الاسم الكامل',
+  dateOfBirth: 'تاريخ الميلاد',
+  address: 'العنوان',
+  guardianInfo: 'معلومات ولي الأمر',
+  guardianName: 'اسم ولي الأمر',
+  guardianPhone: 'هاتف ولي الأمر',
+  occupation: 'المهنة',
+  stateOfOrigin: 'الولاية الأصلية',
+  enrollmentDate: 'تاريخ التسجيل',
+  feeStatus: 'حالة الرسوم',
+  
+  // Password Reset
+  requestPasswordReset: 'طلب إعادة تعيين كلمة المرور',
+  passwordResetRequested: 'تم طلب إعادة تعيين كلمة المرور',
+  passwordResetInfo: 'تم إرسال طلب إعادة تعيين كلمة المرور إلى المسؤول. يرجى التواصل مع إدارة المدرسة للحصول على كلمة المرور الجديدة.',
+  
+  // Quiz Management
   quizManagement: 'إدارة المسابقات',
   createCompetition: 'إنشاء مسابقة',
   addQuestions: 'إضافة أسئلة',
@@ -505,6 +875,14 @@ const ar: Translations = {
   copyCode: 'نسخ الرمز',
   codeCopied: 'تم النسخ!',
   
+  // Footer
+  quickLinks: 'روابط سريعة',
+  contactUs: 'اتصل بنا',
+  allRightsReserved: 'جميع الحقوق محفوظة.',
+  director: 'المدير',
+  footerDescription: 'تقديم تعليم إسلامي وعربي عالي الجودة مع مهارات تقنية المعلومات الحديثة للجيل القادم.',
+  
+  // Common
   readMore: 'اقرأ المزيد',
   loading: 'جارٍ التحميل...',
   error: 'حدث خطأ',
@@ -541,19 +919,20 @@ const ar: Translations = {
   profile: 'الملف الشخصي',
   fees: 'الرسوم',
   logout: 'خروج',
-  
-  // Footer
-  quickLinks: 'روابط سريعة',
-  contactUs: 'اتصل بنا',
-  allRightsReserved: 'جميع الحقوق محفوظة.',
-  director: 'المدير',
-  footerDescription: 'تقديم تعليم إسلامي وعربي عالي الجودة مع مهارات تقنية المعلومات الحديثة للجيل القادم.',
+  selectClass: 'اختر الفصل',
+  selectDate: 'اختر التاريخ',
+  noDataAvailable: 'لا توجد بيانات متاحة',
+  personalInfo: 'المعلومات الشخصية',
+  academicInfo: 'المعلومات الأكاديمية',
+  class: 'الفصل',
+  sex: 'الجنس',
+  male: 'ذكر',
+  female: 'أنثى',
+  origin: 'الأصل',
 };
 
-// All translations
 const translations: Record<Language, Translations> = { en, ar };
 
-// Context type
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -569,13 +948,11 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  // Initialize from localStorage or default to English
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem('language');
     return (stored === 'ar' ? 'ar' : 'en') as Language;
   });
 
-  // Update localStorage and document direction when language changes
   useEffect(() => {
     localStorage.setItem('language', language);
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
@@ -603,7 +980,6 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   );
 };
 
-// Custom hook to use language context
 export const useLanguage = (): LanguageContextType => {
   const context = useContext(LanguageContext);
   if (!context) {

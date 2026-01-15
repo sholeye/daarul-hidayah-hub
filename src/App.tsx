@@ -20,6 +20,7 @@ import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Quiz from "./pages/Quiz";
 import QuizTake from "./pages/QuizTake";
+import Gallery from "./pages/Gallery";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
@@ -69,6 +70,7 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/quiz" element={<Quiz />} />
                 <Route path="/quiz/take" element={<QuizTake />} />
+                <Route path="/gallery" element={<Gallery />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
 
               {/* Admin Routes */}

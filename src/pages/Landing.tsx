@@ -1,5 +1,5 @@
 /**
- * Landing Page - Main public-facing page for Daarul Hidayah
+ * Landing Page - Premium redesigned public-facing page for Daarul Hidayah
  */
 
 import React from 'react';
@@ -7,14 +7,12 @@ import { Navbar } from '@/features/common/Navbar';
 import { Footer } from '@/features/common/Footer';
 import { HeroSection } from '@/features/common/HeroSection';
 import { AboutSection } from '@/features/common/AboutSection';
-import { AcademicStructureSection } from '@/features/common/AcademicStructureSection';
 import { IslamicValuesSection } from '@/features/common/IslamicValuesSection';
-import { CurriculumSection } from '@/features/common/CurriculumSection';
 import { ProgramsSection } from '@/features/common/ProgramsSection';
 import { QuizHighlightSection } from '@/features/common/QuizHighlightSection';
-import { EventsSection } from '@/features/common/EventsSection';
 import { AnnouncementsSection } from '@/features/common/AnnouncementsSection';
 import { ContactCTASection } from '@/features/common/ContactCTASection';
+import { GalleryPreview } from '@/features/common/GalleryPreview';
 
 const Landing: React.FC = () => {
   return (
@@ -23,12 +21,10 @@ const Landing: React.FC = () => {
       <main>
         <HeroSection />
         <AboutSection />
-        <AcademicStructureSection />
         <IslamicValuesSection />
-        <CurriculumSection />
         <ProgramsSection />
+        <GalleryPreview />
         <QuizHighlightSection />
-        <EventsSection />
         <AnnouncementsSection />
         <ContactCTASection />
       </main>
