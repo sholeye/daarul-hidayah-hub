@@ -1,31 +1,25 @@
 /**
- * AdminQuizPage - Quiz competition management for administrators
- * 
- * Features:
- * - Create new competitions
- * - Add/edit questions to question bank
- * - Assign representatives from each house
- * - Generate login credentials for reps
- * - View upcoming and past competitions
+ * AdminQuizPage - Enhanced Quiz Management Dashboard
  */
 
 import React, { useState } from 'react';
 import { 
   FiPlus, FiCalendar, FiClock, FiUsers, FiHelpCircle,
-  FiCopy, FiCheck, FiEdit2, FiTrash2, FiChevronDown, FiPlay
+  FiCopy, FiCheck, FiEdit2, FiTrash2, FiPlay, FiEye,
+  FiDownload, FiUpload, FiBarChart2, FiAward, FiZap
 } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
-  mockCompetitions, houses, sampleQuestions 
+  mockCompetitions, houses, sampleQuestions, houseLeaderboard 
 } from '@/data/quizMockData';
 import { formatDate } from '@/utils/helpers';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import type { QuizQuestion } from '@/types/quiz';
 
-// House colors
 const houseColors: Record<string, string> = {
   AbuBakr: 'bg-emerald-500',
   Umar: 'bg-blue-500',
@@ -34,13 +28,12 @@ const houseColors: Record<string, string> = {
 };
 
 export const AdminQuizPage: React.FC = () => {
-  const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'competitions' | 'questions' | 'credentials'>('competitions');
+  const { t, isRTL } = useLanguage();
+  const [activeTab, setActiveTab] = useState<'competitions' | 'questions' | 'credentials' | 'analytics'>('competitions');
   const [showNewCompetition, setShowNewCompetition] = useState(false);
   const [showNewQuestion, setShowNewQuestion] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  // New competition form state
   const [competitionForm, setCompetitionForm] = useState({
     title: '',
     date: '',
@@ -48,9 +41,9 @@ export const AdminQuizPage: React.FC = () => {
     repsPerHouse: 3,
   });
 
-  // New question form state
   const [questionForm, setQuestionForm] = useState<Partial<QuizQuestion>>({
     question: '',
+    questionArabic: '',
     type: 'mcq',
     options: ['', '', '', ''],
     correctAnswer: '',
@@ -58,7 +51,6 @@ export const AdminQuizPage: React.FC = () => {
     timeLimit: 30,
   });
 
-  // Copy login code to clipboard
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
@@ -66,16 +58,15 @@ export const AdminQuizPage: React.FC = () => {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  // Get upcoming competition
   const upcomingCompetition = mockCompetitions.find(c => c.status === 'upcoming');
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div dir={isRTL ? 'rtl' : 'ltr'} className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t.quizManagement}</h1>
-          <p className="text-muted-foreground mt-1">Manage quiz competitions, questions, and representatives</p>
+          <p className="text-muted-foreground mt-1">{t.quizSubtitle}</p>
         </div>
         <Button onClick={() => setShowNewCompetition(true)} className="gap-2">
           <FiPlus className="w-4 h-4" />
@@ -83,17 +74,42 @@ export const AdminQuizPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-2xl bg-card border border-border">
+          <FiCalendar className="w-8 h-8 text-primary mb-2" />
+          <p className="text-2xl font-bold text-foreground">12</p>
+          <p className="text-sm text-muted-foreground">{t.upcomingCompetition}</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-card border border-border">
+          <FiHelpCircle className="w-8 h-8 text-secondary mb-2" />
+          <p className="text-2xl font-bold text-foreground">{sampleQuestions.length}</p>
+          <p className="text-sm text-muted-foreground">{t.questionBank}</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-card border border-border">
+          <FiUsers className="w-8 h-8 text-accent mb-2" />
+          <p className="text-2xl font-bold text-foreground">48</p>
+          <p className="text-sm text-muted-foreground">{t.representatives}</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-card border border-border">
+          <FiAward className="w-8 h-8 text-amber-500 mb-2" />
+          <p className="text-2xl font-bold text-foreground">4</p>
+          <p className="text-sm text-muted-foreground">{t.houses}</p>
+        </div>
+      </div>
+
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-border pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border">
         {[
-          { id: 'competitions', label: 'Competitions', icon: FiCalendar },
+          { id: 'competitions', label: t.upcomingCompetition, icon: FiCalendar },
           { id: 'questions', label: t.questionBank, icon: FiHelpCircle },
           { id: 'credentials', label: t.loginCredentials, icon: FiUsers },
+          { id: 'analytics', label: t.leaderboard, icon: FiBarChart2 },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
               activeTab === tab.id
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -105,10 +121,9 @@ export const AdminQuizPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Tab Content */}
+      {/* Competitions Tab */}
       {activeTab === 'competitions' && (
         <div className="space-y-6">
-          {/* Upcoming Competition */}
           {upcomingCompetition && (
             <div className="rounded-2xl bg-card border border-border shadow-soft overflow-hidden">
               <div className="bg-gradient-to-r from-primary to-primary/80 p-4 text-primary-foreground">
@@ -145,7 +160,6 @@ export const AdminQuizPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Representatives by House */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {houses.map(house => {
                     const reps = upcomingCompetition.representatives.filter(r => r.house === house.name);
@@ -171,7 +185,6 @@ export const AdminQuizPage: React.FC = () => {
             </div>
           )}
 
-          {/* New Competition Form */}
           {showNewCompetition && (
             <div className="rounded-2xl bg-card border border-border shadow-soft p-6">
               <h3 className="text-lg font-bold text-foreground mb-4">{t.createCompetition}</h3>
@@ -212,10 +225,7 @@ export const AdminQuizPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
-                <Button onClick={() => {
-                  toast.success('Competition created!');
-                  setShowNewCompetition(false);
-                }}>
+                <Button onClick={() => { toast.success(t.success); setShowNewCompetition(false); }}>
                   {t.save}
                 </Button>
                 <Button variant="outline" onClick={() => setShowNewCompetition(false)}>
@@ -227,19 +237,23 @@ export const AdminQuizPage: React.FC = () => {
         </div>
       )}
 
+      {/* Questions Tab */}
       {activeTab === 'questions' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <p className="text-muted-foreground">
-              {sampleQuestions.length} questions in bank
-            </p>
-            <Button size="sm" onClick={() => setShowNewQuestion(true)} className="gap-2">
-              <FiPlus className="w-4 h-4" />
-              {t.addQuestion}
-            </Button>
+            <p className="text-muted-foreground">{sampleQuestions.length} {t.questions}</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="gap-2">
+                <FiUpload className="w-4 h-4" />
+                {t.add}
+              </Button>
+              <Button size="sm" onClick={() => setShowNewQuestion(true)} className="gap-2">
+                <FiPlus className="w-4 h-4" />
+                {t.addQuestion}
+              </Button>
+            </div>
           </div>
 
-          {/* New Question Form */}
           {showNewQuestion && (
             <div className="rounded-2xl bg-card border border-border shadow-soft p-6">
               <h3 className="text-lg font-bold text-foreground mb-4">{t.addQuestion}</h3>
@@ -266,13 +280,24 @@ export const AdminQuizPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">{t.questionText}</label>
-                  <Input
-                    value={questionForm.question}
-                    onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
-                    placeholder="Enter your question"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">{t.questionText} (EN)</label>
+                    <Input
+                      value={questionForm.question}
+                      onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
+                      placeholder="Enter question in English"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">{t.questionText} (AR)</label>
+                    <Input
+                      value={questionForm.questionArabic}
+                      onChange={(e) => setQuestionForm({ ...questionForm, questionArabic: e.target.value })}
+                      placeholder="أدخل السؤال بالعربية"
+                      dir="rtl"
+                    />
+                  </div>
                 </div>
                 {questionForm.type === 'mcq' && (
                   <div>
@@ -287,7 +312,7 @@ export const AdminQuizPage: React.FC = () => {
                             newOpts[i] = e.target.value;
                             setQuestionForm({ ...questionForm, options: newOpts });
                           }}
-                          placeholder={`Option ${i + 1}`}
+                          placeholder={`${t.options} ${i + 1}`}
                         />
                       ))}
                     </div>
@@ -299,7 +324,6 @@ export const AdminQuizPage: React.FC = () => {
                     <Input
                       value={questionForm.correctAnswer}
                       onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
-                      placeholder="Correct answer"
                     />
                   </div>
                   <div>
@@ -321,10 +345,7 @@ export const AdminQuizPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
-                <Button onClick={() => {
-                  toast.success('Question added!');
-                  setShowNewQuestion(false);
-                }}>
+                <Button onClick={() => { toast.success(t.success); setShowNewQuestion(false); }}>
                   {t.save}
                 </Button>
                 <Button variant="outline" onClick={() => setShowNewQuestion(false)}>
@@ -334,18 +355,20 @@ export const AdminQuizPage: React.FC = () => {
             </div>
           )}
 
-          {/* Questions List */}
           <div className="space-y-3">
             {sampleQuestions.map((q, index) => (
               <div key={q.id} className="rounded-xl bg-card border border-border p-4 flex items-start gap-4">
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
                   {index + 1}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground">{q.question}</p>
+                  {q.questionArabic && (
+                    <p className="text-sm text-muted-foreground mt-1" dir="rtl">{q.questionArabic}</p>
+                  )}
                   <div className="flex items-center gap-3 mt-2">
                     <Badge variant="outline" className="capitalize">{q.type.replace('_', '/')}</Badge>
-                    <span className="text-sm text-muted-foreground">{q.points} pts</span>
+                    <span className="text-sm text-muted-foreground">{q.points} {t.pts}</span>
                     <span className="text-sm text-muted-foreground">{q.timeLimit}s</span>
                   </div>
                 </div>
@@ -363,11 +386,10 @@ export const AdminQuizPage: React.FC = () => {
         </div>
       )}
 
+      {/* Credentials Tab */}
       {activeTab === 'credentials' && (
         <div className="space-y-6">
-          <p className="text-muted-foreground">
-            Login credentials for the upcoming competition. Share these codes with the representatives.
-          </p>
+          <p className="text-muted-foreground">{t.loginCredentials}</p>
 
           {upcomingCompetition ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -394,9 +416,9 @@ export const AdminQuizPage: React.FC = () => {
                               onClick={() => handleCopyCode(rep.loginCode)}
                             >
                               {copiedCode === rep.loginCode ? (
-                                <FiCheck className="w-4 h-4 text-primary" />
+                                <FiCheck className="w-3 h-3 text-primary" />
                               ) : (
-                                <FiCopy className="w-4 h-4" />
+                                <FiCopy className="w-3 h-3" />
                               )}
                             </Button>
                           </div>
@@ -408,10 +430,60 @@ export const AdminQuizPage: React.FC = () => {
               })}
             </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              No upcoming competition. Create one first.
-            </div>
+            <p className="text-center text-muted-foreground py-8">{t.noUpcoming}</p>
           )}
+        </div>
+      )}
+
+      {/* Analytics Tab */}
+      {activeTab === 'analytics' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="rounded-2xl bg-card border border-border p-6">
+              <h3 className="text-lg font-bold text-foreground mb-4">{t.houseStandings}</h3>
+              <div className="space-y-4">
+                {houseLeaderboard.map((house, index) => (
+                  <div key={house.house} className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-xl ${houseColors[house.house]} flex items-center justify-center text-white font-bold`}>
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between mb-1">
+                        <span className="font-medium text-foreground">{house.house}</span>
+                        <span className="text-primary font-bold">{house.totalScore} {t.pts}</span>
+                      </div>
+                      <Progress value={(house.totalScore / 500) * 100} className="h-2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-card border border-border p-6">
+              <h3 className="text-lg font-bold text-foreground mb-4">{t.topStudents}</h3>
+              <div className="space-y-3">
+                {[
+                  { name: 'Ahmad Ibrahim', house: 'AbuBakr', score: 120 },
+                  { name: 'Khalid Mustafa', house: 'Umar', score: 115 },
+                  { name: 'Salman Hasan', house: 'Ali', score: 110 },
+                ].map((student, index) => (
+                  <div key={student.name} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
+                    <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary font-bold text-sm">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground">{student.name}</p>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${houseColors[student.house]}`} />
+                        <span className="text-sm text-muted-foreground">{student.house}</span>
+                      </div>
+                    </div>
+                    <Badge variant="secondary">{student.score} {t.pts}</Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
