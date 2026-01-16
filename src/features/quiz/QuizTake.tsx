@@ -4,7 +4,8 @@
  * Features:
  * - Stunning animated UI with progress visualization
  * - Real-time timer with dramatic countdown
- * - Gamified scoring with particle effects
+ * - Gamified scoring with particle effects & confetti
+ * - Sound effects for correct/wrong answers
  * - House-themed colors and animations
  * - Full i18n support
  */
@@ -13,7 +14,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom';
 import { 
   FiClock, FiFlag, FiRefreshCw, FiArrowLeft, FiArrowRight,
-  FiCheck, FiX, FiZap, FiAward, FiTarget, FiStar
+  FiCheck, FiX, FiZap, FiAward, FiTarget, FiStar, FiVolume2, FiVolumeX
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -23,10 +24,12 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { mockCompetitions, sampleQuestions } from '@/data/quizMockData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useQuizSounds } from '@/hooks/useQuizSounds';
+import { useConfetti } from '@/hooks/useConfetti';
 import type { HouseName, QuizQuestion } from '@/types/quiz';
 
 // House color themes
-const houseThemes: Record<HouseName, { 
+const houseThemes: Record<HouseName, {
   gradient: string; 
   bg: string; 
   ring: string;
@@ -164,6 +167,11 @@ export const QuizTake: React.FC = () => {
   const [params] = useSearchParams();
   const code = (params.get('code') || '').trim();
 
+  // Sound and confetti hooks
+  const { playCorrect, playWrong, playUrgent, playComplete } = useQuizSounds();
+  const { celebrateCorrect, celebrateCompletion } = useConfetti();
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
   const competition = mockCompetitions.find((c) => c.status === 'upcoming') ?? mockCompetitions[0];
   const rep = competition?.representatives.find((r) => r.loginCode === code);
 
@@ -238,22 +246,40 @@ export const QuizTake: React.FC = () => {
         [current.id]: { answer: answerText, ...result } 
       }));
 
-      // Show result popup briefly
+      // Show result popup and play effects
       setLastResult(result);
       setShowResult(true);
+      
+      // Sound and confetti effects
+      if (soundEnabled) {
+        if (result.isCorrect) {
+          playCorrect();
+          celebrateCorrect(repHouse);
+        } else {
+          playWrong();
+        }
+      } else if (result.isCorrect) {
+        celebrateCorrect(repHouse);
+      }
       
       setTimeout(() => {
         setShowResult(false);
         
         if (indexRef.current >= assignedQuestions.length - 1) {
           setFinished(true);
+          // Play completion sound and celebration
+          if (soundEnabled) {
+            playComplete();
+          }
+          const finalScore = Object.values(answers).reduce((sum, a) => sum + a.points, 0) + result.points;
+          celebrateCompletion(finalScore, totalPossible, repHouse);
           return;
         }
 
         setIndex((i) => i + 1);
       }, 800);
     },
-    [assignedQuestions.length, current, draft, finished, gradeQuestion, answers]
+    [assignedQuestions.length, current, draft, finished, gradeQuestion, answers, soundEnabled, playCorrect, playWrong, playComplete, celebrateCorrect, celebrateCompletion, repHouse, totalPossible]
   );
 
   const goBack = useCallback(() => {
@@ -262,13 +288,17 @@ export const QuizTake: React.FC = () => {
     setIndex((i) => Math.max(0, i - 1));
   }, [finished, index, showResult]);
 
-  // Timer
+  // Timer with urgent sound
   useEffect(() => {
     if (finished || showResult) return;
     if (!current) return;
 
     const interval = window.setInterval(() => {
       setTimeLeft((tLeft) => {
+        // Play urgent sound at 5 seconds
+        if (tLeft === 6 && soundEnabled) {
+          playUrgent();
+        }
         if (tLeft <= 1) {
           window.setTimeout(() => goNext(true), 0);
           return 0;
@@ -278,7 +308,7 @@ export const QuizTake: React.FC = () => {
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [current?.id, finished, showResult, goNext]);
+  }, [current?.id, finished, showResult, goNext, soundEnabled, playUrgent]);
 
   // No code provided
   if (!code) {
@@ -508,7 +538,21 @@ export const QuizTake: React.FC = () => {
               <h1 className="text-xl font-bold">{competition.title}</h1>
               <p className="text-white/80 text-sm">{repName} • {repHouse}</p>
             </div>
-            <AnimatedTimer timeLeft={timeLeft} maxTime={current.timeLimit ?? 30} theme={theme} />
+            <div className="flex items-center gap-3">
+              {/* Sound toggle */}
+              <button
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className="w-10 h-10 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                title={soundEnabled ? 'Mute sounds' : 'Enable sounds'}
+              >
+                {soundEnabled ? (
+                  <FiVolume2 className="w-5 h-5" />
+                ) : (
+                  <FiVolumeX className="w-5 h-5" />
+                )}
+              </button>
+              <AnimatedTimer timeLeft={timeLeft} maxTime={current.timeLimit ?? 30} theme={theme} />
+            </div>
           </div>
         </div>
 
