@@ -2,6 +2,7 @@
  * Quiz Competition Types
  * 
  * Defines all types related to the inter-house quiz competition system.
+ * Includes both auto-graded (MCQ, True/False, Short Answer) and manually-graded (Essay) question types.
  */
 
 // The four houses (Bayt)
@@ -16,8 +17,8 @@ export interface House {
   competitionsWon: number;
 }
 
-// Question types supported
-export type QuestionType = 'mcq' | 'true_false' | 'short_answer';
+// Question types supported - now includes essay for manual grading
+export type QuestionType = 'mcq' | 'true_false' | 'short_answer' | 'essay';
 
 export interface QuizQuestion {
   id: string;
@@ -25,9 +26,12 @@ export interface QuizQuestion {
   questionArabic?: string;
   type: QuestionType;
   options?: string[];       // For MCQ questions (4 options)
-  correctAnswer: string;    // The correct answer text
+  correctAnswer: string;    // The correct answer text (not applicable for essay)
   points: number;           // Points for this question (default 10)
-  timeLimit: number;        // Seconds allowed (default 30)
+  timeLimit: number;        // Seconds allowed (default 30, essays typically longer)
+  maxPoints?: number;       // For essay questions - max score a grader can assign
+  rubric?: string;          // Grading guidelines for essay questions
+  rubricArabic?: string;    // Arabic version of rubric
 }
 
 // Representative (Rep) who participates in quiz
@@ -48,12 +52,13 @@ export interface QuizCompetition {
   title: string;
   scheduledDate: string;    // ISO date string
   scheduledTime: string;    // 24hr format "HH:mm"
-  status: 'upcoming' | 'live' | 'completed';
+  status: 'upcoming' | 'live' | 'completed' | 'grading'; // grading = has essay answers pending
   questions: QuizQuestion[];
   representatives: QuizRepresentative[];
   repsPerHouse: number;     // How many reps each house sends (e.g., 3)
   createdAt: string;
   createdBy: string;
+  hasEssayQuestions?: boolean; // Whether this competition includes essay questions
 }
 
 // Competition result after completion
@@ -78,6 +83,11 @@ export interface QuizAnswer {
   pointsEarned: number;
   timeSpent: number;        // Seconds taken to answer
   answeredAt: string;
+  // For essay questions
+  pendingGrade?: boolean;   // True if essay needs grading
+  gradedBy?: string;        // Admin/instructor who graded
+  gradedAt?: string;        // When graded
+  feedback?: string;        // Feedback from grader
 }
 
 // Leaderboard entry
@@ -95,4 +105,16 @@ export interface StudentLeaderEntry {
   house: HouseName;
   totalScore: number;
   competitionsParticipated: number;
+}
+
+// Essay answer pending grading
+export interface PendingEssayGrade {
+  answerId: string;
+  questionId: string;
+  questionText: string;
+  repName: string;
+  repHouse: HouseName;
+  answer: string;
+  maxPoints: number;
+  submittedAt: string;
 }

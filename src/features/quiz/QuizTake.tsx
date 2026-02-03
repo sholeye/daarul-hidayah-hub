@@ -216,13 +216,17 @@ export const QuizTake: React.FC = () => {
   }, [current?.id]);
 
   const gradeQuestion = useCallback((q: QuizQuestion, ans: string) => {
+    // Essay questions are graded manually - just mark as submitted
+    if (q.type === 'essay') {
+      return { isCorrect: ans.trim().length > 0, points: 0, pendingGrade: true };
+    }
     if (!ans.trim()) return { isCorrect: false, points: 0 };
     const isCorrect = normalize(ans) === normalize(q.correctAnswer);
     return { isCorrect, points: isCorrect ? q.points : 0 };
   }, []);
 
   const totalPossible = useMemo(
-    () => assignedQuestions.reduce((sum, q) => sum + (q.points ?? 0), 0),
+    () => assignedQuestions.reduce((sum, q) => sum + (q.type === 'essay' ? 0 : (q.points ?? 0)), 0),
     [assignedQuestions]
   );
 
@@ -585,11 +589,21 @@ export const QuizTake: React.FC = () => {
               </div>
               <div className="flex-1 pt-2">
                 <Badge variant="outline" className="mb-3 capitalize">
-                  {current.type === 'mcq' ? t.mcq : current.type === 'true_false' ? t.trueFalse : t.shortAnswer}
+                  {current.type === 'mcq' ? t.mcq : 
+                   current.type === 'true_false' ? t.trueFalse : 
+                   current.type === 'essay' ? t.essayQuestion :
+                   t.shortAnswer}
                 </Badge>
-                <h2 className="text-xl md:text-2xl font-bold text-foreground leading-relaxed">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground leading-relaxed">
                   {questionText}
                 </h2>
+                {current.type === 'essay' && current.rubric && (
+                  <div className="mt-4 p-3 bg-muted/50 rounded-xl border border-border">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>{t.rubric}:</strong> {language === 'ar' && current.rubricArabic ? current.rubricArabic : current.rubric}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -668,6 +682,33 @@ export const QuizTake: React.FC = () => {
                   disabled={showResult}
                   className="h-14 text-lg rounded-2xl border-2 focus:ring-2 focus:border-primary"
                 />
+              </motion.div>
+            )}
+
+            {/* Essay answer input */}
+            {current.type === 'essay' && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-3"
+              >
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder={t.essayAnswer}
+                  disabled={showResult}
+                  className="w-full h-40 sm:h-48 px-4 py-3 text-base rounded-2xl border-2 border-border bg-background text-foreground resize-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                />
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>{draft.length} characters</span>
+                  <span>{t.maxScore}: {current.maxPoints} {t.pts}</span>
+                </div>
+                <div className="p-3 bg-secondary/10 rounded-xl border border-secondary/20">
+                  <p className="text-sm text-muted-foreground">
+                    <FiClock className="inline w-4 h-4 mr-2" />
+                    {t.yourEssaySubmitted}
+                  </p>
+                </div>
               </motion.div>
             )}
           </div>

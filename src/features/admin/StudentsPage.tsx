@@ -617,6 +617,15 @@ export const StudentsPage: React.FC = () => {
     toast.success('Student updated successfully!');
   };
 
+  // Handle student delete
+  const handleDelete = (studentId: string) => {
+    const student = students.find(s => s.id === studentId);
+    if (confirm(`Are you sure you want to delete ${student?.fullName}? This action cannot be undone.`)) {
+      setStudents(students.filter(s => s.id !== studentId));
+      toast.success('Student deleted successfully!');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -703,6 +712,13 @@ export const StudentsPage: React.FC = () => {
                         title="Edit Student"
                       >
                         <FiEdit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(student.id)}
+                        className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+                        title="Delete Student"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
