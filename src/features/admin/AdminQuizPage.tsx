@@ -29,7 +29,7 @@ const houseColors: Record<string, string> = {
 
 export const AdminQuizPage: React.FC = () => {
   const { t, isRTL } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'competitions' | 'questions' | 'credentials' | 'analytics'>('competitions');
+  const [activeTab, setActiveTab] = useState<'competitions' | 'questions' | 'credentials' | 'grading' | 'analytics'>('competitions');
   const [showNewCompetition, setShowNewCompetition] = useState(false);
   const [showNewQuestion, setShowNewQuestion] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -49,7 +49,19 @@ export const AdminQuizPage: React.FC = () => {
     correctAnswer: '',
     points: 10,
     timeLimit: 30,
+    maxPoints: 20,
+    rubric: '',
+    rubricArabic: '',
   });
+
+  // Mock pending essay grades
+  const [pendingEssays, setPendingEssays] = useState([
+    { id: '1', repName: 'Ahmad Ibrahim', house: 'AbuBakr' as const, question: 'Explain the significance of the Hijrah in Islamic history.', answer: 'The Hijrah marks the migration of Prophet Muhammad (SAW) from Makkah to Madinah in 622 CE. It represents a turning point in Islamic history as it established the first Islamic state and community...', maxPoints: 20, submittedAt: '2025-01-12T10:15:00' },
+    { id: '2', repName: 'Khalid Mustafa', house: 'Umar' as const, question: 'Discuss the importance of Salah in the life of a Muslim.', answer: 'Salah is the second pillar of Islam and is obligatory for every Muslim. It is a direct connection between the worshipper and Allah, performed five times daily...', maxPoints: 20, submittedAt: '2025-01-12T10:18:00' },
+  ]);
+  const [gradingEssay, setGradingEssay] = useState<string | null>(null);
+  const [gradeScore, setGradeScore] = useState(0);
+  const [gradeFeedback, setGradeFeedback] = useState('');
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -104,6 +116,7 @@ export const AdminQuizPage: React.FC = () => {
           { id: 'competitions', label: t.upcomingCompetition, icon: FiCalendar },
           { id: 'questions', label: t.questionBank, icon: FiHelpCircle },
           { id: 'credentials', label: t.loginCredentials, icon: FiUsers },
+          { id: 'grading', label: t.essayGrading, icon: FiEdit2 },
           { id: 'analytics', label: t.leaderboard, icon: FiBarChart2 },
         ].map((tab) => (
           <button
@@ -116,7 +129,10 @@ export const AdminQuizPage: React.FC = () => {
             }`}
           >
             <tab.icon className="w-4 h-4" />
-            {tab.label}
+            <span className="hidden sm:inline">{tab.label}</span>
+            {tab.id === 'grading' && pendingEssays.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{pendingEssays.length}</Badge>
+            )}
           </button>
         ))}
       </div>
@@ -260,11 +276,12 @@ export const AdminQuizPage: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">{t.questionType}</label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {[
                       { value: 'mcq', label: t.mcq },
                       { value: 'true_false', label: t.trueFalse },
                       { value: 'short_answer', label: t.shortAnswer },
+                      { value: 'essay', label: t.essayQuestion },
                     ].map((type) => (
                       <button
                         key={type.value}
@@ -318,20 +335,59 @@ export const AdminQuizPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                <div className="grid grid-cols-3 gap-4">
+                {/* Essay-specific fields */}
+                {questionForm.type === 'essay' && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">{t.rubric} (EN)</label>
+                        <textarea
+                          value={questionForm.rubric || ''}
+                          onChange={(e) => setQuestionForm({ ...questionForm, rubric: e.target.value })}
+                          className="w-full h-24 px-3 py-2 rounded-lg border border-input bg-background text-foreground resize-none"
+                          placeholder="Grading criteria for this essay question..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">{t.rubric} (AR)</label>
+                        <textarea
+                          value={questionForm.rubricArabic || ''}
+                          onChange={(e) => setQuestionForm({ ...questionForm, rubricArabic: e.target.value })}
+                          className="w-full h-24 px-3 py-2 rounded-lg border border-input bg-background text-foreground resize-none"
+                          placeholder="معايير التقييم لهذا السؤال..."
+                          dir="rtl"
+                        />
+                      </div>
+                    </div>
+                    <div className="p-4 bg-secondary/10 rounded-xl">
+                      <p className="text-sm text-muted-foreground">
+                        <FiEdit2 className="inline w-4 h-4 mr-2" />
+                        Essay questions require manual grading by the quiz master after submission.
+                      </p>
+                    </div>
+                  </>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {questionForm.type !== 'essay' && (
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">{t.correctAnswer}</label>
+                      <Input
+                        value={questionForm.correctAnswer}
+                        onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
+                      />
+                    </div>
+                  )}
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">{t.correctAnswer}</label>
-                    <Input
-                      value={questionForm.correctAnswer}
-                      onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">{t.points}</label>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      {questionForm.type === 'essay' ? t.maxScore : t.points}
+                    </label>
                     <Input
                       type="number"
-                      value={questionForm.points}
-                      onChange={(e) => setQuestionForm({ ...questionForm, points: parseInt(e.target.value) })}
+                      value={questionForm.type === 'essay' ? questionForm.maxPoints : questionForm.points}
+                      onChange={(e) => setQuestionForm({ 
+                        ...questionForm, 
+                        [questionForm.type === 'essay' ? 'maxPoints' : 'points']: parseInt(e.target.value) 
+                      })}
                     />
                   </div>
                   <div>
@@ -340,6 +396,7 @@ export const AdminQuizPage: React.FC = () => {
                       type="number"
                       value={questionForm.timeLimit}
                       onChange={(e) => setQuestionForm({ ...questionForm, timeLimit: parseInt(e.target.value) })}
+                      placeholder={questionForm.type === 'essay' ? '180' : '30'}
                     />
                   </div>
                 </div>
@@ -431,6 +488,119 @@ export const AdminQuizPage: React.FC = () => {
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-8">{t.noUpcoming}</p>
+          )}
+        </div>
+      )}
+
+      {/* Essay Grading Tab */}
+      {activeTab === 'grading' && (
+        <div className="space-y-6">
+          {pendingEssays.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-muted-foreground">{pendingEssays.length} {t.pendingGrading}</p>
+              </div>
+              
+              {pendingEssays.map((essay) => (
+                <div key={essay.id} className="rounded-2xl bg-card border border-border shadow-soft overflow-hidden">
+                  <div className={`${houseColors[essay.house]} p-4 text-white`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                          <span className="font-bold">{essay.repName[0]}</span>
+                        </div>
+                        <div>
+                          <p className="font-bold">{essay.repName}</p>
+                          <p className="text-white/70 text-sm">{essay.house}</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-white/20 text-white w-fit">{t.awaitingGrade}</Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">{t.question}</h4>
+                      <p className="text-muted-foreground">{essay.question}</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">{t.essayAnswer}</h4>
+                      <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                        <p className="text-foreground whitespace-pre-wrap">{essay.answer}</p>
+                      </div>
+                    </div>
+                    
+                    {gradingEssay === essay.id ? (
+                      <div className="space-y-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                              {t.score} (0-{essay.maxPoints})
+                            </label>
+                            <Input
+                              type="number"
+                              value={gradeScore}
+                              onChange={(e) => setGradeScore(Math.min(essay.maxPoints, Math.max(0, parseInt(e.target.value) || 0)))}
+                              min={0}
+                              max={essay.maxPoints}
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <Progress value={(gradeScore / essay.maxPoints) * 100} className="h-3 flex-1" />
+                            <span className="ml-3 font-bold text-foreground">{gradeScore}/{essay.maxPoints}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">{t.graderFeedback}</label>
+                          <textarea
+                            value={gradeFeedback}
+                            onChange={(e) => setGradeFeedback(e.target.value)}
+                            className="w-full h-24 px-3 py-2 rounded-lg border border-input bg-background text-foreground resize-none"
+                            placeholder="Provide feedback for the student..."
+                          />
+                        </div>
+                        <div className="flex gap-3">
+                          <Button 
+                            onClick={() => {
+                              setPendingEssays(pendingEssays.filter(e => e.id !== essay.id));
+                              setGradingEssay(null);
+                              setGradeScore(0);
+                              setGradeFeedback('');
+                              toast.success(t.success);
+                            }}
+                          >
+                            <FiCheck className="w-4 h-4 mr-2" />
+                            {t.submitGrade}
+                          </Button>
+                          <Button variant="outline" onClick={() => {
+                            setGradingEssay(null);
+                            setGradeScore(0);
+                            setGradeFeedback('');
+                          }}>
+                            {t.cancel}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">{t.maxScore}: {essay.maxPoints} {t.pts}</p>
+                        <Button onClick={() => setGradingEssay(essay.id)}>
+                          <FiEdit2 className="w-4 h-4 mr-2" />
+                          {t.gradeNow}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-card rounded-2xl border border-border">
+              <FiCheck className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t.success}</h3>
+              <p className="text-muted-foreground">{t.noDataAvailable}</p>
+            </div>
           )}
         </div>
       )}

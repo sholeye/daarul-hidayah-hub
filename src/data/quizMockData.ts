@@ -169,6 +169,30 @@ export const sampleQuestions: QuizQuestion[] = [
     points: 10,
     timeLimit: 30,
   },
+  {
+    id: 'q13',
+    question: 'Explain the significance of the Hijrah in Islamic history and its impact on the Muslim community.',
+    questionArabic: 'اشرح أهمية الهجرة في التاريخ الإسلامي وتأثيرها على المجتمع المسلم.',
+    type: 'essay',
+    correctAnswer: '',
+    points: 0,
+    maxPoints: 20,
+    timeLimit: 180,
+    rubric: 'Award full marks for: 1) Explanation of what Hijrah was (5pts), 2) Historical context (5pts), 3) Impact on Muslim community (5pts), 4) Long-term significance (5pts)',
+    rubricArabic: 'النقاط الكاملة: ١) شرح ماهية الهجرة (٥ نقاط)، ٢) السياق التاريخي (٥ نقاط)، ٣) الأثر على المجتمع المسلم (٥ نقاط)، ٤) الأهمية طويلة المدى (٥ نقاط)',
+  },
+  {
+    id: 'q14',
+    question: 'Discuss the importance of Salah (prayer) in the daily life of a Muslim.',
+    questionArabic: 'ناقش أهمية الصلاة في الحياة اليومية للمسلم.',
+    type: 'essay',
+    correctAnswer: '',
+    points: 0,
+    maxPoints: 15,
+    timeLimit: 120,
+    rubric: 'Award marks for: 1) Spiritual benefits (5pts), 2) Discipline and structure (5pts), 3) Community aspect (5pts)',
+    rubricArabic: 'النقاط: ١) الفوائد الروحية (٥ نقاط)، ٢) الانضباط والنظام (٥ نقاط)، ٣) الجانب المجتمعي (٥ نقاط)',
+  },
 ];
 
 // Sample representatives for upcoming competition

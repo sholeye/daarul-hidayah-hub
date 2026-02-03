@@ -181,6 +181,18 @@ interface Translations {
   unableToLoadQuestions: string;
   trueLabel: string;
   falseLabel: string;
+  essayQuestion: string;
+  essayGrading: string;
+  pendingGrading: string;
+  gradeNow: string;
+  submitGrade: string;
+  maxScore: string;
+  rubric: string;
+  essayAnswer: string;
+  graderFeedback: string;
+  gradedBy: string;
+  awaitingGrade: string;
+  yourEssaySubmitted: string;
   
   // Admin Dashboard & Portal
   dashboard: string;
@@ -489,6 +501,18 @@ const en: Translations = {
   unableToLoadQuestions: 'Unable to load quiz questions.',
   trueLabel: 'True',
   falseLabel: 'False',
+  essayQuestion: 'Essay Question',
+  essayGrading: 'Essay Grading',
+  pendingGrading: 'Pending Grading',
+  gradeNow: 'Grade Now',
+  submitGrade: 'Submit Grade',
+  maxScore: 'Max Score',
+  rubric: 'Grading Rubric',
+  essayAnswer: 'Essay Answer',
+  graderFeedback: 'Grader Feedback',
+  gradedBy: 'Graded By',
+  awaitingGrade: 'Awaiting Grade',
+  yourEssaySubmitted: 'Your essay has been submitted and is awaiting grading',
   
   // Dashboard
   dashboard: 'Dashboard',
@@ -797,6 +821,18 @@ const ar: Translations = {
   unableToLoadQuestions: 'تعذر تحميل أسئلة المسابقة.',
   trueLabel: 'صح',
   falseLabel: 'خطأ',
+  essayQuestion: 'سؤال مقالي',
+  essayGrading: 'تقييم المقال',
+  pendingGrading: 'بانتظار التقييم',
+  gradeNow: 'قيّم الآن',
+  submitGrade: 'إرسال التقييم',
+  maxScore: 'أعلى درجة',
+  rubric: 'معايير التقييم',
+  essayAnswer: 'إجابة المقال',
+  graderFeedback: 'ملاحظات المقيّم',
+  gradedBy: 'تم التقييم بواسطة',
+  awaitingGrade: 'بانتظار التقييم',
+  yourEssaySubmitted: 'تم إرسال مقالك وهو بانتظار التقييم',
   
   // Dashboard
   dashboard: 'لوحة التحكم',
