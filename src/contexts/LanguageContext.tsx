@@ -45,6 +45,16 @@ interface Translations {
   valuesText: string;
   ourCommunity: string;
   communityText: string;
+  ourApproach: string;
+  approachText: string;
+  ourStory: string;
+  ourStoryText1: string;
+  ourStoryText2: string;
+  ourApproachIntro: string;
+  approachQuran: string;
+  approachCharacter: string;
+  approachModern: string;
+  approachIT: string;
   underDirection: string;
   
   // Islamic Values Section
@@ -95,6 +105,7 @@ interface Translations {
   tahfizProgram: string;
   tahfizProgramAr: string;
   tahfizDesc: string;
+  tahfizItCombinedDesc: string;
   itProgram: string;
   itProgramAr: string;
   itProgramDesc: string;
@@ -143,6 +154,7 @@ interface Translations {
   leaderboard: string;
   upcomingCompetition: string;
   pastWinners: string;
+  latestWinners: string;
   startQuiz: string;
   viewResults: string;
   houseStandings: string;
