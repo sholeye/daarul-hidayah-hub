@@ -4,24 +4,17 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowRight, FiBookOpen, FiAward, FiUsers, FiStar } from 'react-icons/fi';
+import { FiArrowRight, FiBookOpen } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const HeroSection: React.FC = () => {
   const { t, isRTL } = useLanguage();
 
-  const stats = [
-    { value: '6', label: t.classes, icon: FiBookOpen },
-    { value: '2', label: t.programs, icon: FiStar },
-    { value: '100+', label: t.students, icon: FiUsers },
-    { value: '', label: t.qualityEducation, icon: FiAward },
-  ];
-
   return (
     <section 
       dir={isRTL ? 'rtl' : 'ltr'}
-      className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden"
+      className="relative min-h-[85vh] flex items-center justify-center pt-28 pb-16 overflow-hidden"
     >
       {/* Mesh Gradient Background */}
       <div className="absolute inset-0 mesh-gradient" />
@@ -36,7 +29,7 @@ export const HeroSection: React.FC = () => {
       <div className="absolute inset-0 islamic-pattern opacity-30" />
       
       <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-5xl mx-auto text-center">
+        <div className="max-w-4xl mx-auto text-center">
           {/* Animated Badge */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8 animate-bounce-in backdrop-blur-sm">
             <FiBookOpen className="w-4 h-4" />
@@ -51,23 +44,20 @@ export const HeroSection: React.FC = () => {
             </span>
           </h1>
 
-          {/* Arabic Motto with Elegant Styling */}
+          {/* Motto */}
           <div className="mb-6 animate-slide-up delay-100">
-            <p className="text-2xl md:text-3xl text-secondary font-bold mb-2">
-              {t.arabicMotto}
-            </p>
             <p className="text-lg md:text-xl text-muted-foreground italic">
               {t.englishMotto}
             </p>
           </div>
 
           {/* Description */}
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up delay-200">
+          <p className="text-base md:text-lg text-muted-foreground max-w-3xl mx-auto mb-10 animate-slide-up delay-200 leading-relaxed">
             {t.heroDescription}
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-slide-up delay-300">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up delay-300">
             <Link to="/contact">
               <Button variant="hero" size="xl" className="btn-glow group">
                 {t.enrollChild}
@@ -80,38 +70,6 @@ export const HeroSection: React.FC = () => {
               </Button>
             </Link>
           </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 animate-slide-up delay-400">
-            {stats.map((stat, index) => (
-              <div 
-                key={stat.label}
-                className="group relative p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-medium"
-                style={{ animationDelay: `${400 + index * 100}ms` }}
-              >
-                <div className="flex flex-col items-center">
-                  {stat.value ? (
-                    <p className="text-4xl md:text-5xl font-bold text-gradient-primary mb-2">
-                      {stat.value}
-                    </p>
-                  ) : (
-                    <stat.icon className="w-10 h-10 text-secondary mb-2" />
-                  )}
-                  <p className="text-sm text-muted-foreground font-medium">{stat.label}</p>
-                </div>
-                
-                {/* Hover glow effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-float">
-        <div className="w-6 h-10 rounded-full border-2 border-primary/30 flex items-start justify-center p-2">
-          <div className="w-1.5 h-3 bg-primary/50 rounded-full animate-pulse" />
         </div>
       </div>
     </section>
