@@ -487,6 +487,7 @@ const en: Translations = {
   upcomingCompetition: 'Upcoming Competition',
   pastWinners: 'Past Winners',
   latestWinners: 'Latest Winners',
+  startQuiz: 'Start Quiz',
   viewResults: 'View Results',
   houseStandings: 'House Standings',
   overallRankings: 'Overall rankings',
