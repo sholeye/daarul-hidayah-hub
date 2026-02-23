@@ -43,19 +43,19 @@ export const AdminLayout: React.FC = () => {
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-background flex w-full">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50 w-72 bg-sidebar transform transition-transform duration-300 ease-out lg:translate-x-0 ${
+      <aside className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-50 w-72 bg-card border-r border-border transform transition-transform duration-300 ease-out lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
           {/* Logo section */}
-          <div className="p-6 border-b border-sidebar-border">
+          <div className="p-6 border-b border-border">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shadow-lg">
-                <span className="text-sidebar-primary-foreground font-bold text-xl">د</span>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+                <span className="text-primary-foreground font-bold text-xl">د</span>
               </div>
               <div>
-                <h1 className="font-bold text-lg text-sidebar-foreground">{t.schoolName}</h1>
-                <p className="text-xs text-sidebar-foreground/60">{t.adminPortal}</p>
+                <h1 className="font-bold text-lg text-foreground">{t.schoolName}</h1>
+                <p className="text-xs text-muted-foreground">{t.adminPortal}</p>
               </div>
             </div>
           </div>
@@ -71,11 +71,11 @@ export const AdminLayout: React.FC = () => {
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                     isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-soft'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                      ? 'bg-primary/10 text-primary shadow-soft'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-sidebar-primary' : ''}`} />
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-primary' : ''}`} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -83,20 +83,20 @@ export const AdminLayout: React.FC = () => {
           </nav>
 
           {/* User section */}
-          <div className="p-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-sidebar-accent/50">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center">
-                <span className="text-sidebar-primary-foreground font-bold">{user?.name?.[0]}</span>
+          <div className="p-4 border-t border-border">
+            <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-muted/50">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+                <span className="text-primary-foreground font-bold">{user?.name?.[0]}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name}</p>
-                <p className="text-xs text-sidebar-foreground/60 capitalize">{user?.role}</p>
+                <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
               </div>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent" 
+              className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted" 
               onClick={handleLogout}
             >
               <FiLogOut className="w-4 h-4 mr-2" />

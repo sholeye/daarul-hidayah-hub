@@ -45,6 +45,16 @@ interface Translations {
   valuesText: string;
   ourCommunity: string;
   communityText: string;
+  ourApproach: string;
+  approachText: string;
+  ourStory: string;
+  ourStoryText1: string;
+  ourStoryText2: string;
+  ourApproachIntro: string;
+  approachQuran: string;
+  approachCharacter: string;
+  approachModern: string;
+  approachIT: string;
   underDirection: string;
   
   // Islamic Values Section
@@ -95,6 +105,7 @@ interface Translations {
   tahfizProgram: string;
   tahfizProgramAr: string;
   tahfizDesc: string;
+  tahfizItCombinedDesc: string;
   itProgram: string;
   itProgramAr: string;
   itProgramDesc: string;
@@ -143,6 +154,7 @@ interface Translations {
   leaderboard: string;
   upcomingCompetition: string;
   pastWinners: string;
+  latestWinners: string;
   startQuiz: string;
   viewResults: string;
   houseStandings: string;
@@ -351,12 +363,12 @@ const en: Translations = {
   qualityEducation: 'Quality Education',
   yearsOfExcellence: 'Years of Excellence',
   nurturingMinds: 'Nurturing young minds with Islamic values',
-  heroDescription: 'Located in Ita Ika, Abeokuta, we provide quality Islamic and Arabic education rooted in the Quran and Sunnah, preparing students for success in both worlds.',
+  heroDescription: 'From our center in Ita Ika, Abeokuta, we deliver distinguished Islamic and Arabic education founded upon the Qur\'an and authentic Sunnah. We prepare our students with knowledge, discipline, and values that empower them to excel in their worldly pursuits and attain lasting success in the Hereafter.',
   
   // About
   aboutTitle: 'About Us',
   aboutSubtitle: 'Nurturing young minds with Islamic values and modern education',
-  aboutDescription: 'Located in Ita Ika, Abeokuta, we are an onsite Islamic and Arabic school dedicated to providing quality education rooted in Islamic values and modern educational standards.',
+  aboutDescription: 'We are an institution founded on the belief that true education shapes both the mind and the character. Our mission is not simply to teach, but to nurture individuals who understand their faith with clarity, live by it with sincerity, and carry it with confidence.\n\nWe emphasize depth over memorization, precision over assumption, and character alongside knowledge. Through strong Arabic foundations and authentic Islamic teachings, we equip students to access knowledge directly and grow with independence and purpose.\n\nOur goal is to develop individuals grounded in faith, refined in character, and prepared to live with responsibility, dignity, and lasting direction.',
   ourMission: 'Our Mission',
   missionText: 'To nurture students in the authentic teachings of Islam while equipping them with modern skills for a balanced life.',
   ourVision: 'Our Vision',
@@ -365,6 +377,16 @@ const en: Translations = {
   valuesText: 'Sincerity (Ikhlas), Knowledge (Ilm), Discipline (Tarbiyyah), and Excellence in all endeavors.',
   ourCommunity: 'Our Community',
   communityText: 'A supportive environment where students, teachers, and parents work together for holistic development.',
+  ourApproach: 'Our Approach',
+  approachText: 'We emphasize depth over memorization, precision over assumption, and character alongside knowledge through strong Arabic foundations.',
+  ourStory: 'Our Story',
+  ourStoryText1: 'Daarul Hidayah (House of Guidance) was established with a vision to create an educational institution that nurtures young minds in the authentic teachings of Islam while preparing them for the challenges of the modern world.',
+  ourStoryText2: 'Located in Ita Ika, Abeokuta, Ogun State, our school serves as a beacon of knowledge for the local community and beyond, offering quality Islamic and Arabic education at affordable rates.',
+  ourApproachIntro: 'We believe in a balanced approach to education that integrates:',
+  approachQuran: 'Comprehensive Quran and Arabic studies',
+  approachCharacter: 'Character development through Islamic values',
+  approachModern: 'Modern academic subjects for well-rounded education',
+  approachIT: 'IT skills for future readiness',
   underDirection: 'Under the Direction of',
   
   // Islamic Values
@@ -415,6 +437,7 @@ const en: Translations = {
   tahfizProgram: 'Tahfiz Program',
   tahfizProgramAr: 'برنامج التحفيظ',
   tahfizDesc: 'Dedicated Quran memorization program for students committed to preserving the Holy Quran in their hearts.',
+  tahfizItCombinedDesc: 'Students enrolled in the Tahfiz program automatically participate in the IT program. This unique combination ensures students develop both spiritual depth through Quran memorization and practical digital skills for the modern world.',
   itProgram: 'IT Program',
   itProgramAr: 'برنامج تقنية المعلومات',
   itProgramDesc: 'Introduction to web development covering HTML, CSS, and fundamental web design principles.',
@@ -463,6 +486,7 @@ const en: Translations = {
   leaderboard: 'Leaderboard',
   upcomingCompetition: 'Upcoming Competition',
   pastWinners: 'Past Winners',
+  latestWinners: 'Latest Winners',
   startQuiz: 'Start Quiz',
   viewResults: 'View Results',
   houseStandings: 'House Standings',
@@ -671,12 +695,12 @@ const ar: Translations = {
   qualityEducation: 'تعليم متميز',
   yearsOfExcellence: 'سنوات من التميز',
   nurturingMinds: 'رعاية العقول الشابة بالقيم الإسلامية',
-  heroDescription: 'تقع في إيتا إيكا، أبيوكوتا، نقدم تعليماً إسلامياً وعربياً عالي الجودة متجذراً في القرآن والسنة، لإعداد الطلاب للنجاح في الدنيا والآخرة.',
+  heroDescription: 'من مركزنا في إيتا إيكا، أبيوكوتا، نقدم تعليماً إسلامياً وعربياً متميزاً مبنياً على القرآن الكريم والسنة النبوية الصحيحة. نعدّ طلابنا بالعلم والانضباط والقيم التي تمكنهم من التفوق في حياتهم الدنيوية ونيل النجاح الدائم في الآخرة.',
   
   // About
   aboutTitle: 'من نحن',
   aboutSubtitle: 'رعاية العقول الشابة بالقيم الإسلامية والتعليم الحديث',
-  aboutDescription: 'تقع في إيتا إيكا، أبيوكوتا، نحن مدرسة إسلامية وعربية ملتزمة بتقديم تعليم عالي الجودة متجذر في القيم الإسلامية والمعايير التعليمية الحديثة.',
+  aboutDescription: 'نحن مؤسسة تأسست على الإيمان بأن التعليم الحقيقي يشكّل العقل والشخصية معاً. رسالتنا ليست مجرد التعليم، بل تنشئة أفراد يفهمون دينهم بوضوح، ويعيشون به بإخلاص، ويحملونه بثقة.\n\nنؤكد على العمق فوق الحفظ، والدقة فوق الافتراض، والأخلاق جنباً إلى جنب مع العلم. من خلال أسس عربية متينة وتعاليم إسلامية أصيلة، نجهز الطلاب للوصول إلى المعرفة مباشرة والنمو باستقلالية وهدف.\n\nهدفنا تطوير أفراد راسخين في الإيمان، مهذبين في الأخلاق، ومستعدين للعيش بمسؤولية وكرامة واتجاه دائم.',
   ourMission: 'رسالتنا',
   missionText: 'تنشئة الطلاب على تعاليم الإسلام الأصيلة مع تزويدهم بالمهارات الحديثة لحياة متوازنة.',
   ourVision: 'رؤيتنا',
@@ -685,6 +709,16 @@ const ar: Translations = {
   valuesText: 'الإخلاص والعلم والتربية والتميز في كل المساعي.',
   ourCommunity: 'مجتمعنا',
   communityText: 'بيئة داعمة يعمل فيها الطلاب والمعلمون وأولياء الأمور معاً للتنمية الشاملة.',
+  ourApproach: 'منهجنا',
+  approachText: 'نؤكد على العمق فوق الحفظ، والدقة فوق الافتراض، والأخلاق جنباً إلى جنب مع العلم من خلال أسس عربية متينة.',
+  ourStory: 'قصتنا',
+  ourStoryText1: 'تأسست دار الهداية برؤية لإنشاء مؤسسة تعليمية تنشئ العقول الشابة على تعاليم الإسلام الأصيلة مع إعدادهم لتحديات العالم الحديث.',
+  ourStoryText2: 'تقع في إيتا إيكا، أبيوكوتا، ولاية أوغون، تعمل مدرستنا كمنارة للعلم للمجتمع المحلي وما وراءه، تقدم تعليماً إسلامياً وعربياً عالي الجودة بأسعار معقولة.',
+  ourApproachIntro: 'نؤمن بنهج متوازن في التعليم يجمع بين:',
+  approachQuran: 'دراسات شاملة للقرآن والعربية',
+  approachCharacter: 'تطوير الشخصية من خلال القيم الإسلامية',
+  approachModern: 'المواد الأكاديمية الحديثة لتعليم متكامل',
+  approachIT: 'مهارات تقنية المعلومات للاستعداد للمستقبل',
   underDirection: 'تحت إدارة',
   
   // Islamic Values
@@ -735,6 +769,7 @@ const ar: Translations = {
   tahfizProgram: 'برنامج التحفيظ',
   tahfizProgramAr: 'برنامج التحفيظ',
   tahfizDesc: 'برنامج مخصص لحفظ القرآن للطلاب الملتزمين بحفظ القرآن الكريم في قلوبهم.',
+  tahfizItCombinedDesc: 'الطلاب المسجلون في برنامج التحفيظ يشاركون تلقائياً في برنامج تقنية المعلومات. هذا المزيج الفريد يضمن تطوير العمق الروحي من خلال حفظ القرآن والمهارات الرقمية العملية للعالم الحديث.',
   itProgram: 'برنامج تقنية المعلومات',
   itProgramAr: 'برنامج تقنية المعلومات',
   itProgramDesc: 'مقدمة في تطوير الويب تغطي HTML وCSS ومبادئ تصميم الويب الأساسية.',
@@ -783,6 +818,7 @@ const ar: Translations = {
   leaderboard: 'لوحة المتصدرين',
   upcomingCompetition: 'المسابقة القادمة',
   pastWinners: 'الفائزون السابقون',
+  latestWinners: 'أحدث الفائزين',
   startQuiz: 'ابدأ المسابقة',
   viewResults: 'عرض النتائج',
   houseStandings: 'ترتيب البيوت',

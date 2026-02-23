@@ -1,9 +1,9 @@
 /**
- * Navbar - Main navigation component with language toggle
+ * Navbar - Main navigation component with language toggle and active link indicator
  */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FiMoon, FiSun, FiMenu, FiX } from 'react-icons/fi';
 import { useTheme } from '@/features/app/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -14,14 +14,21 @@ export const Navbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const location = useLocation();
 
   const navLinks = [
     { href: '/', label: t.home },
     { href: '/about', label: t.about },
     { href: '/curriculum', label: t.curriculum },
+    { href: '/gallery', label: t.gallery },
     { href: '/quiz', label: t.quiz },
     { href: '/contact', label: t.contact },
   ];
+
+  const isActive = (href: string) => {
+    if (href === '/') return location.pathname === '/';
+    return location.pathname.startsWith(href);
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -39,14 +46,21 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6 lg:gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 to={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+                className={`relative py-1 transition-colors font-medium ${
+                  isActive(link.href) 
+                    ? 'text-primary' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
                 {link.label}
+                {isActive(link.href) && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                )}
               </Link>
             ))}
           </div>
@@ -91,20 +105,24 @@ export const Navbar: React.FC = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border animate-slide-down">
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   to={link.href}
-                  className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2"
+                  className={`px-3 py-2.5 rounded-lg transition-colors font-medium ${
+                    isActive(link.href)
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.label}
                 </Link>
               ))}
               <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="outline" className="w-full">
-                  Portal Login
+                <Button variant="outline" className="w-full mt-2">
+                  {t.portalLogin}
                 </Button>
               </Link>
             </div>
