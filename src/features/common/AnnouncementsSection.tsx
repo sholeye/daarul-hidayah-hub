@@ -1,8 +1,8 @@
 import React from 'react';
 import { FiBell, FiAlertCircle, FiBookOpen, FiCalendar } from 'react-icons/fi';
-import { mockAnnouncements } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSharedData } from '@/contexts/SharedDataContext';
 
 const categoryIcons = { general: FiBell, academic: FiBookOpen, event: FiCalendar, urgent: FiAlertCircle };
 const categoryColors = { general: 'bg-muted', academic: 'bg-primary/10 text-primary', event: 'bg-secondary/10 text-secondary', urgent: 'bg-destructive/10 text-destructive' };

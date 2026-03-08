@@ -7,8 +7,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '@/types';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { supabase, createIsolatedAuthClient } from '@/lib/supabase';
 
 interface AuthContextType {
   user: User | null;
