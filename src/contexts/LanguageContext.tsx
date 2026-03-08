@@ -682,6 +682,19 @@ const en: Translations = {
   male: 'Male',
   female: 'Female',
   origin: 'Origin',
+  // Parent
+  parentPortal: 'Parent Portal',
+  myChildren: 'My Children',
+  childrenEnrolled: 'Children Enrolled',
+  // Blog
+  blog: 'Blog',
+  blogSubtitle: 'Insights, updates, and reflections from Daarul Hidayah',
+  newPost: 'New Post',
+  publishPost: 'Publish Post',
+  blogTitle: 'Blog Title',
+  blogContent: 'Content',
+  blogExcerpt: 'Excerpt',
+  blogTags: 'Tags',
 };
 
 const ar: Translations = {
