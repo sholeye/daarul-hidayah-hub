@@ -350,6 +350,79 @@ interface Translations {
   blogContent: string;
   blogExcerpt: string;
   blogTags: string;
+  backToAllPosts: string;
+  likes: string;
+  noBlogPosts: string;
+  pleaseLoginToLike: string;
+  // Contact page
+  contactTitle: string;
+  contactSubtitle: string;
+  getInTouch: string;
+  getInTouchDesc: string;
+  addressLabel: string;
+  addressValue: string;
+  phoneLabel: string;
+  emailLabel: string;
+  schoolHours: string;
+  schoolHoursWeekdays: string;
+  schoolHoursFriday: string;
+  sendMessage: string;
+  nameLabel: string;
+  phonePlaceholder: string;
+  emailPlaceholder: string;
+  subjectLabel: string;
+  subjectPlaceholder: string;
+  messageLabel: string;
+  messagePlaceholder: string;
+  sending: string;
+  messageSent: string;
+  // Login page
+  welcomeBackLogin: string;
+  signInToPortal: string;
+  selectRole: string;
+  administrator: string;
+  instructor: string;
+  student: string;
+  parent: string;
+  fullAccessDesc: string;
+  manageClassesDesc: string;
+  viewGradesDesc: string;
+  monitorChildrenDesc: string;
+  emailAddress: string;
+  enterEmail: string;
+  passwordLabel: string;
+  enterPassword: string;
+  signingIn: string;
+  signIn: string;
+  orQuickLoginAs: string;
+  demoModeNote: string;
+  backToHome: string;
+  // Quiz CTA
+  readyToCompete: string;
+  readyToCompeteDesc: string;
+  everySunday: string;
+  // Admin Blog
+  createAndManage: string;
+  totalPosts: string;
+  published: string;
+  totalLikes: string;
+  draft: string;
+  editBlogPost: string;
+  newBlogPost: string;
+  titleRequired: string;
+  excerptOptional: string;
+  tagsCommaSeparated: string;
+  contentRequired: string;
+  writeBlogPost: string;
+  updatePost: string;
+  blogPostUpdated: string;
+  blogPostPublished: string;
+  blogPostDeleted: string;
+  postUnpublished: string;
+  postPublished: string;
+  confirmDeletePost: string;
+  createFirstPost: string;
+  noBlogPostsYet: string;
 }
 
 const en: Translations = {
