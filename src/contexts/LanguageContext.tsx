@@ -1027,6 +1027,19 @@ const ar: Translations = {
   male: 'ذكر',
   female: 'أنثى',
   origin: 'الأصل',
+  // Parent
+  parentPortal: 'بوابة ولي الأمر',
+  myChildren: 'أبنائي',
+  childrenEnrolled: 'الأبناء المسجلون',
+  // Blog
+  blog: 'المدونة',
+  blogSubtitle: 'رؤى وتحديثات وتأملات من دار الهداية',
+  newPost: 'منشور جديد',
+  publishPost: 'نشر المنشور',
+  blogTitle: 'عنوان المنشور',
+  blogContent: 'المحتوى',
+  blogExcerpt: 'الملخص',
+  blogTags: 'الوسوم',
 };
 
 const translations: Record<Language, Translations> = { en, ar };
