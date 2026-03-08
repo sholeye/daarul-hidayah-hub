@@ -94,6 +94,7 @@ const Login: React.FC = () => {
         admin: '/admin',
         instructor: '/instructor',
         learner: '/learner',
+        parent: '/parent',
       };
       navigate(roleRoutes[selectedRole] || from);
     } else {
