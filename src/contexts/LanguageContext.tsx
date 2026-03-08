@@ -337,6 +337,19 @@ interface Translations {
   male: string;
   female: string;
   origin: string;
+  // Parent
+  parentPortal: string;
+  myChildren: string;
+  childrenEnrolled: string;
+  // Blog
+  blog: string;
+  blogSubtitle: string;
+  newPost: string;
+  publishPost: string;
+  blogTitle: string;
+  blogContent: string;
+  blogExcerpt: string;
+  blogTags: string;
 }
 
 const en: Translations = {
@@ -669,6 +682,19 @@ const en: Translations = {
   male: 'Male',
   female: 'Female',
   origin: 'Origin',
+  // Parent
+  parentPortal: 'Parent Portal',
+  myChildren: 'My Children',
+  childrenEnrolled: 'Children Enrolled',
+  // Blog
+  blog: 'Blog',
+  blogSubtitle: 'Insights, updates, and reflections from Daarul Hidayah',
+  newPost: 'New Post',
+  publishPost: 'Publish Post',
+  blogTitle: 'Blog Title',
+  blogContent: 'Content',
+  blogExcerpt: 'Excerpt',
+  blogTags: 'Tags',
 };
 
 const ar: Translations = {
@@ -1001,6 +1027,19 @@ const ar: Translations = {
   male: 'ذكر',
   female: 'أنثى',
   origin: 'الأصل',
+  // Parent
+  parentPortal: 'بوابة ولي الأمر',
+  myChildren: 'أبنائي',
+  childrenEnrolled: 'الأبناء المسجلون',
+  // Blog
+  blog: 'المدونة',
+  blogSubtitle: 'رؤى وتحديثات وتأملات من دار الهداية',
+  newPost: 'منشور جديد',
+  publishPost: 'نشر المنشور',
+  blogTitle: 'عنوان المنشور',
+  blogContent: 'المحتوى',
+  blogExcerpt: 'الملخص',
+  blogTags: 'الوسوم',
 };
 
 const translations: Record<Language, Translations> = { en, ar };

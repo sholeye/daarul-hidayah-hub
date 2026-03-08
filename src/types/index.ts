@@ -1,5 +1,21 @@
 // User Types
-export type UserRole = 'admin' | 'instructor' | 'learner';
+export type UserRole = 'admin' | 'instructor' | 'learner' | 'parent';
+
+// Blog Types
+export interface BlogPost {
+  id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  author: string;
+  authorRole: UserRole;
+  createdAt: string;
+  updatedAt: string;
+  isPublished: boolean;
+  likes: string[]; // user IDs who liked
+  tags: string[];
+  coverImage?: string;
+}
 
 export interface User {
   id: string;

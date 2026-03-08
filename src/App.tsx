@@ -21,6 +21,7 @@ import Login from "./pages/Login";
 import Quiz from "./pages/Quiz";
 import QuizTake from "./pages/QuizTake";
 import Gallery from "./pages/Gallery";
+import Blog from "./pages/Blog";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
@@ -34,6 +35,7 @@ import { ResultsPage } from "@/features/admin/ResultsPage";
 import { AnnouncementsPage } from "@/features/admin/AnnouncementsPage";
 import { SettingsPage } from "@/features/admin/SettingsPage";
 import { AdminQuizPage } from "@/features/admin/AdminQuizPage";
+import { AdminBlogPage } from "@/features/admin/AdminBlogPage";
 
 // Learner
 import { LearnerLayout } from "@/features/learner/LearnerLayout";
@@ -49,6 +51,15 @@ import { InstructorDashboard } from "@/features/instructor/InstructorDashboard";
 import { InstructorClasses } from "@/features/instructor/InstructorClasses";
 import { InstructorAttendance } from "@/features/instructor/InstructorAttendance";
 import { InstructorResults } from "@/features/instructor/InstructorResults";
+
+// Parent
+import { ParentLayout } from "@/features/parent/ParentLayout";
+import { ParentDashboard } from "@/features/parent/ParentDashboard";
+import { ParentChildren } from "@/features/parent/ParentChildren";
+import { ParentAttendance } from "@/features/parent/ParentAttendance";
+import { ParentResults } from "@/features/parent/ParentResults";
+import { ParentFees } from "@/features/parent/ParentFees";
+import { ParentAnnouncements } from "@/features/parent/ParentAnnouncements";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +82,7 @@ const App = () => (
                 <Route path="/quiz" element={<Quiz />} />
                 <Route path="/quiz/take" element={<QuizTake />} />
                 <Route path="/gallery" element={<Gallery />} />
+                <Route path="/blog" element={<Blog />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
 
               {/* Admin Routes */}
@@ -86,6 +98,7 @@ const App = () => (
                 <Route path="results" element={<ResultsPage />} />
                 <Route path="quiz" element={<AdminQuizPage />} />
                 <Route path="announcements" element={<AnnouncementsPage />} />
+                <Route path="blog" element={<AdminBlogPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
 
@@ -112,6 +125,20 @@ const App = () => (
                 <Route path="attendance" element={<LearnerAttendance />} />
                 <Route path="results" element={<LearnerResults />} />
                 <Route path="fees" element={<LearnerFees />} />
+              </Route>
+
+              {/* Parent Routes */}
+              <Route path="/parent" element={
+                <ProtectedRoute allowedRoles={['parent']}>
+                  <ParentLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<ParentDashboard />} />
+                <Route path="children" element={<ParentChildren />} />
+                <Route path="attendance" element={<ParentAttendance />} />
+                <Route path="results" element={<ParentResults />} />
+                <Route path="fees" element={<ParentFees />} />
+                <Route path="announcements" element={<ParentAnnouncements />} />
               </Route>
 
                 <Route path="*" element={<NotFound />} />
