@@ -1,24 +1,23 @@
 /**
- * =============================================================================
- * INSTRUCTOR CLASSES PAGE
- * =============================================================================
+ * Instructor Classes Page - Shared state
  */
 
 import React from 'react';
 import { FiUsers, FiBook } from 'react-icons/fi';
-import { mockStudents, schoolClasses } from '@/data/mockData';
+import { schoolClasses } from '@/data/mockData';
+import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 
 export const InstructorClasses: React.FC = () => {
+  const { students } = useSharedData();
   const assignedClasses = schoolClasses.slice(0, 2);
 
   return (
     <div className="space-y-6">
       <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Classes</h1><p className="text-muted-foreground mt-1">View your assigned classes and students</p></div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {assignedClasses.map(cls => {
-          const classStudents = mockStudents.filter(s => s.class === cls.name);
+          const classStudents = students.filter(s => s.class === cls.name);
           return (
             <div key={cls.id} className="bg-card rounded-2xl border border-border p-6">
               <div className="flex items-center gap-4 mb-4">
