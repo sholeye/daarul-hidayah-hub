@@ -1,16 +1,15 @@
 /**
- * Students Management Page - Full CRUD with shared state
+ * Students Management Page - Real Supabase CRUD
  */
 
 import React, { useState } from 'react';
-import { 
+import {
   FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiX,
-  FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiDownload,
-  FiCopy, FiCheck, FiKey
+  FiUser, FiKey, FiCopy, FiCheck, FiDownload
 } from 'react-icons/fi';
-import { schoolClasses } from '@/data/mockData';
 import { Student } from '@/types';
 import { useSharedData } from '@/contexts/SharedDataContext';
+import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,13 +23,14 @@ interface RegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (student: Partial<Student>, credentials: { username: string; password: string }) => void;
+  schoolClasses: { id: string; name: string }[];
 }
 
-const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, onSubmit, schoolClasses }) => {
   const [formData, setFormData] = useState({
-    fullName: '', email: '', dateOfBirth: '', address: '', phone: '', origin: '',
+    fullName: '', dateOfBirth: '', address: '', phone: '', origin: '',
     sex: 'male' as 'male' | 'female', guardianName: '', guardianPhone: '',
-    guardianOccupation: '', guardianState: '', class: schoolClasses[0].name,
+    guardianOccupation: '', guardianState: '', class: schoolClasses[0]?.name || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -45,7 +45,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, 
       class: formData.class, enrollmentDate: new Date().toISOString().split('T')[0],
       feeStatus: 'unpaid', amountPaid: 0, totalFee: 6000,
     }, credentials);
-    setFormData({ fullName: '', email: '', dateOfBirth: '', address: '', phone: '', origin: '', sex: 'male', guardianName: '', guardianPhone: '', guardianOccupation: '', guardianState: '', class: schoolClasses[0].name });
+    setFormData({ fullName: '', dateOfBirth: '', address: '', phone: '', origin: '', sex: 'male', guardianName: '', guardianPhone: '', guardianOccupation: '', guardianState: '', class: schoolClasses[0]?.name || '' });
   };
 
   if (!isOpen) return null;
@@ -92,8 +92,8 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, 
 };
 
 // Edit Modal
-interface EditModalProps { student: Student | null; onClose: () => void; onSave: (student: Student) => void; }
-const EditModal: React.FC<EditModalProps> = ({ student, onClose, onSave }) => {
+interface EditModalProps { student: Student | null; onClose: () => void; onSave: (student: Student) => void; schoolClasses: { id: string; name: string }[]; }
+const EditModal: React.FC<EditModalProps> = ({ student, onClose, onSave, schoolClasses }) => {
   const [formData, setFormData] = useState<Student | null>(student);
   React.useEffect(() => { setFormData(student); }, [student]);
   if (!student || !formData) return null;
@@ -195,7 +195,7 @@ const CredentialsModal: React.FC<{ isOpen: boolean; onClose: () => void; credent
               <button onClick={copyCredentials} className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg flex items-center gap-2">{copied ? <FiCheck className="w-4 h-4" /> : <FiCopy className="w-4 h-4" />}{copied ? 'Copied!' : 'Copy'}</button></div>
             <div className="space-y-2 font-mono text-sm"><p className="flex items-center gap-2"><span className="text-muted-foreground w-20">Username:</span><span className="text-foreground break-all">{credentials.username}</span></p><p className="flex items-center gap-2"><span className="text-muted-foreground w-20">Password:</span><span className="text-foreground">{credentials.password}</span></p></div>
           </div>
-          <p className="text-sm text-muted-foreground">Please share these credentials with the student. The password is the student ID and should be changed after first login.</p>
+          <p className="text-sm text-muted-foreground">Share these credentials with the student. The password is the student ID.</p>
           <Button onClick={onClose} className="w-full">Done</Button>
         </div>
       </div>
@@ -205,7 +205,8 @@ const CredentialsModal: React.FC<{ isOpen: boolean; onClose: () => void; credent
 
 // Main Students Page
 export const StudentsPage: React.FC = () => {
-  const { students, addStudent, updateStudent, deleteStudent } = useSharedData();
+  const { students, addStudent, updateStudent, deleteStudent, schoolClasses } = useSharedData();
+  const { createStudentAccount } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showRegistration, setShowRegistration] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -220,25 +221,35 @@ export const StudentsPage: React.FC = () => {
     return matchesSearch && matchesClass;
   });
 
-  const handleRegister = (studentData: Partial<Student>, credentials: { username: string; password: string }) => {
-    const newStudent = { ...studentData, id: Date.now().toString() } as Student;
-    addStudent(newStudent);
-    setShowRegistration(false);
-    setNewCredentials(credentials);
-    setNewStudentName(studentData.fullName || '');
-    toast.success(`Student ${newStudent.fullName} registered successfully!`);
+  const handleRegister = async (studentData: Partial<Student>, credentials: { username: string; password: string }) => {
+    try {
+      // Create Supabase auth account for student
+      const authResult = await createStudentAccount(credentials.username, credentials.password, studentData.fullName || '');
+      // Create student record in DB
+      await addStudent(studentData, authResult.userId);
+      setShowRegistration(false);
+      setNewCredentials(credentials);
+      setNewStudentName(studentData.fullName || '');
+      toast.success(`Student ${studentData.fullName} registered!`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to register student');
+    }
   };
 
-  const handleSaveEdit = (updatedStudent: Student) => {
-    updateStudent(updatedStudent.id, updatedStudent);
-    toast.success('Student updated successfully!');
+  const handleSaveEdit = async (updatedStudent: Student) => {
+    try {
+      await updateStudent(updatedStudent.id, updatedStudent);
+      toast.success('Student updated!');
+    } catch { toast.error('Failed to update student'); }
   };
 
-  const handleDelete = (studentId: string) => {
+  const handleDelete = async (studentId: string) => {
     const student = students.find(s => s.id === studentId);
-    if (confirm(`Are you sure you want to delete ${student?.fullName}? This action cannot be undone.`)) {
-      deleteStudent(studentId);
-      toast.success('Student deleted successfully!');
+    if (confirm(`Delete ${student?.fullName}? This cannot be undone.`)) {
+      try {
+        await deleteStudent(studentId);
+        toast.success('Student deleted!');
+      } catch { toast.error('Failed to delete student'); }
     }
   };
 
@@ -275,9 +286,9 @@ export const StudentsPage: React.FC = () => {
                   <td className="px-6 py-4"><Badge variant={student.feeStatus === 'paid' ? 'paid' : student.feeStatus === 'partial' ? 'partial' : 'unpaid'}>{student.feeStatus}</Badge></td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => setSelectedStudent(student)} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="View Details"><FiEye className="w-4 h-4" /></button>
-                      <button onClick={() => setEditingStudent(student)} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit Student"><FiEdit2 className="w-4 h-4" /></button>
-                      <button onClick={() => handleDelete(student.id)} className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Delete Student"><FiTrash2 className="w-4 h-4" /></button>
+                      <button onClick={() => setSelectedStudent(student)} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="View"><FiEye className="w-4 h-4" /></button>
+                      <button onClick={() => setEditingStudent(student)} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><FiEdit2 className="w-4 h-4" /></button>
+                      <button onClick={() => handleDelete(student.id)} className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Delete"><FiTrash2 className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>
@@ -288,9 +299,9 @@ export const StudentsPage: React.FC = () => {
         {filteredStudents.length === 0 && (<div className="p-12 text-center"><FiUser className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" /><p className="text-muted-foreground">No students found</p></div>)}
       </div>
 
-      <RegistrationModal isOpen={showRegistration} onClose={() => setShowRegistration(false)} onSubmit={handleRegister} />
+      <RegistrationModal isOpen={showRegistration} onClose={() => setShowRegistration(false)} onSubmit={handleRegister} schoolClasses={schoolClasses} />
       <StudentDetailModal student={selectedStudent} onClose={() => setSelectedStudent(null)} />
-      <EditModal student={editingStudent} onClose={() => setEditingStudent(null)} onSave={handleSaveEdit} />
+      <EditModal student={editingStudent} onClose={() => setEditingStudent(null)} onSave={handleSaveEdit} schoolClasses={schoolClasses} />
       <CredentialsModal isOpen={!!newCredentials} onClose={() => { setNewCredentials(null); setNewStudentName(''); }} credentials={newCredentials} studentName={newStudentName} />
     </div>
   );

@@ -23,6 +23,7 @@ import Quiz from "./pages/Quiz";
 import QuizTake from "./pages/QuizTake";
 import Gallery from "./pages/Gallery";
 import Blog from "./pages/Blog";
+import Signup from "./pages/Signup";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
@@ -85,6 +86,7 @@ const App = () => (
                 <Route path="/quiz/take" element={<QuizTake />} />
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/blog" element={<Blog />} />
+                <Route path="/signup" element={<Signup />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
 
               {/* Admin Routes */}
