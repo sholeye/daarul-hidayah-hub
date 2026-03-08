@@ -23,6 +23,7 @@ import Quiz from "./pages/Quiz";
 import QuizTake from "./pages/QuizTake";
 import Gallery from "./pages/Gallery";
 import Blog from "./pages/Blog";
+import Signup from "./pages/Signup";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 
