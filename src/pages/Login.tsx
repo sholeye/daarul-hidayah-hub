@@ -50,6 +50,12 @@ const roleOptions: { role: UserRole; label: string; icon: React.ElementType; des
     icon: FiUser,
     description: 'View grades and attendance'
   },
+  { 
+    role: 'parent', 
+    label: 'Parent', 
+    icon: FiUsers,
+    description: 'Monitor your children'
+  },
 ];
 
 // ---------------------------------------------------------------------------
