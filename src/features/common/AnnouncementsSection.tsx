@@ -1,15 +1,16 @@
 import React from 'react';
 import { FiBell, FiAlertCircle, FiBookOpen, FiCalendar } from 'react-icons/fi';
-import { mockAnnouncements } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSharedData } from '@/contexts/SharedDataContext';
 
 const categoryIcons = { general: FiBell, academic: FiBookOpen, event: FiCalendar, urgent: FiAlertCircle };
 const categoryColors = { general: 'bg-muted', academic: 'bg-primary/10 text-primary', event: 'bg-secondary/10 text-secondary', urgent: 'bg-destructive/10 text-destructive' };
 
 export const AnnouncementsSection: React.FC = () => {
   const { t } = useLanguage();
-  const allAnnouncements = mockAnnouncements.filter(a => a.isActive);
+  const { announcements } = useSharedData();
+  const allAnnouncements = announcements.filter(a => a.isActive);
 
   if (allAnnouncements.length === 0) return null;
 
