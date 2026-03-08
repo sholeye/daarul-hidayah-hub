@@ -22,6 +22,7 @@ export const Navbar: React.FC = () => {
     { href: '/curriculum', label: t.curriculum },
     { href: '/gallery', label: t.gallery },
     { href: '/quiz', label: t.quiz },
+    { href: '/blog', label: t.blog },
     { href: '/contact', label: t.contact },
   ];
 

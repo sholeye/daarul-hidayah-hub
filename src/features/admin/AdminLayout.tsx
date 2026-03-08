@@ -32,6 +32,7 @@ export const AdminLayout: React.FC = () => {
     { icon: FiFileText, label: t.results, path: '/admin/results' },
     { icon: FiAward, label: t.quiz, path: '/admin/quiz' },
     { icon: FiBell, label: t.announcements, path: '/admin/announcements' },
+    { icon: FiFileText, label: t.blog, path: '/admin/blog' },
     { icon: FiSettings, label: t.settings, path: '/admin/settings' },
   ];
 
