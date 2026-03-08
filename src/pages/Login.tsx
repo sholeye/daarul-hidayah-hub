@@ -163,13 +163,13 @@ const Login: React.FC = () => {
             <label className="block text-sm font-medium text-foreground mb-3">
               Select Role
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {roleOptions.map((option) => (
                 <button
                   key={option.role}
                   type="button"
                   onClick={() => setSelectedRole(option.role)}
-                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${
+                  className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 ${
                     selectedRole === option.role
                       ? 'border-primary bg-primary/5 shadow-soft'
                       : 'border-border hover:border-primary/50 hover:bg-muted/50'
@@ -180,7 +180,7 @@ const Login: React.FC = () => {
                       <FiCheck className="w-3 h-3 text-primary-foreground" />
                     </span>
                   )}
-                  <option.icon className={`w-6 h-6 ${
+                  <option.icon className={`w-5 h-5 ${
                     selectedRole === option.role ? 'text-primary' : 'text-muted-foreground'
                   }`} />
                   <span className={`text-xs font-medium ${
