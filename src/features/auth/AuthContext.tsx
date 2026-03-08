@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '@/types';
 import { supabase, createIsolatedAuthClient } from '@/lib/supabase';
+import { pickPrimaryRole } from './roleUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -29,13 +30,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Helper to fetch user with role
   const fetchUserWithRole = async (sessionUser: any) => {
-    const { data: roleData } = await supabase
+    const { data: roleRows, error } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', sessionUser.id)
-      .single();
+      .eq('user_id', sessionUser.id);
 
-    const role = roleData?.role as UserRole || 'learner';
+    if (error) {
+      console.error('Role lookup failed:', error.message);
+    }
+
+    const role = pickPrimaryRole(roleRows, sessionUser.user_metadata?.role);
     const fullName = sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User';
 
     setUser({
@@ -49,7 +53,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Listen for auth state changes — no await in the callback to prevent deadlocks
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         // Use setTimeout to avoid blocking the auth state change
         setTimeout(() => fetchUserWithRole(session.user), 0);
