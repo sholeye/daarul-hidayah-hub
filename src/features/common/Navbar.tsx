@@ -14,8 +14,19 @@ import { Button } from '@/components/ui/button';
 export const Navbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { t } = useLanguage();
+  const { user, isAuthenticated } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const location = useLocation();
+
+  const getDashboardPath = () => {
+    switch (user?.role) {
+      case 'admin': return '/admin';
+      case 'instructor': return '/instructor';
+      case 'learner': return '/learner';
+      case 'parent': return '/parent';
+      default: return '/login';
+    }
+  };
 
   const navLinks = [
     { href: '/', label: t.home },
