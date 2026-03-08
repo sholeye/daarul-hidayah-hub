@@ -223,9 +223,11 @@ export const StudentsPage: React.FC = () => {
 
   const handleRegister = async (studentData: Partial<Student>, credentials: { username: string; password: string }) => {
     try {
-      // Create Supabase auth account for student
       const authResult = await createStudentAccount(credentials.username, credentials.password, studentData.fullName || '');
-      // Create student record in DB
+      if (!authResult.success || !authResult.userId) {
+        throw new Error(authResult.message || 'Failed to create student login account');
+      }
+
       await addStudent(studentData, authResult.userId);
       setShowRegistration(false);
       setNewCredentials(credentials);

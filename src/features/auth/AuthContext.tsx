@@ -112,10 +112,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const createStudentAccount = useCallback(async (email: string, password: string, fullName: string): Promise<{ success: boolean; userId?: string; message: string }> => {
-    // Admin creates student account
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+    // Use isolated auth client so admin session is never replaced by the new student session
+    const isolatedAuth = createIsolatedAuthClient();
+
+    const { data, error } = await isolatedAuth.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
       options: {
         data: {
           full_name: fullName,
@@ -128,7 +130,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, message: error.message };
     }
 
-    return { success: true, userId: data.user?.id, message: 'Student account created!' };
+    if (!data.user?.id) {
+      return { success: false, message: 'Student account creation failed. Please try again.' };
+    }
+
+    return { success: true, userId: data.user.id, message: 'Student account created!' };
   }, []);
 
   const logout = useCallback(async () => {

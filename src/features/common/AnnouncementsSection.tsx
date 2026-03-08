@@ -9,7 +9,8 @@ const categoryColors = { general: 'bg-muted', academic: 'bg-primary/10 text-prim
 
 export const AnnouncementsSection: React.FC = () => {
   const { t } = useLanguage();
-  const allAnnouncements = mockAnnouncements.filter(a => a.isActive);
+  const { announcements } = useSharedData();
+  const allAnnouncements = announcements.filter(a => a.isActive);
 
   if (allAnnouncements.length === 0) return null;
 
