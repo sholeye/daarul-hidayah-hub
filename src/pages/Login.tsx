@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { UserRole } from '@/types';
+import { pickPrimaryRole } from '@/features/auth/roleUtils';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ const Login: React.FC = () => {
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
-  const getRoleBasedPath = (role: string) => {
+  const getRoleBasedPath = (role: UserRole) => {
     switch (role) {
       case 'admin': return '/admin';
       case 'instructor': return '/instructor';
@@ -29,6 +31,15 @@ const Login: React.FC = () => {
       case 'parent': return '/parent';
       default: return '/';
     }
+  };
+
+  const canAccessPath = (role: UserRole, path?: string) => {
+    if (!path) return false;
+    if (path.startsWith('/admin')) return role === 'admin';
+    if (path.startsWith('/instructor')) return role === 'instructor';
+    if (path.startsWith('/learner')) return role === 'learner';
+    if (path.startsWith('/parent')) return role === 'parent';
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,13 +52,14 @@ const Login: React.FC = () => {
       // Fetch the user's role to redirect properly
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.user) {
-        const { data: roleData } = await supabase
+        const { data: roleRows } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', sessionData.session.user.id)
-          .single();
-        const role = roleData?.role || 'learner';
-        navigate(from || getRoleBasedPath(role), { replace: true });
+          .eq('user_id', sessionData.session.user.id);
+
+        const role = pickPrimaryRole(roleRows, sessionData.session.user.user_metadata?.role);
+        const fallbackPath = getRoleBasedPath(role);
+        navigate(canAccessPath(role, from) ? from! : fallbackPath, { replace: true });
       } else {
         navigate(from || '/', { replace: true });
       }
