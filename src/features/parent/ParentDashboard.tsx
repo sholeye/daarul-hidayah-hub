@@ -1,0 +1,123 @@
+/**
+ * Parent Dashboard - Overview of children's academic data
+ */
+
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { FiUsers, FiCalendar, FiFileText, FiDollarSign, FiArrowRight, FiCheckCircle, FiXCircle, FiClock } from 'react-icons/fi';
+import { useAuth } from '@/features/auth/AuthContext';
+import { mockStudents, mockResults, mockAttendance, mockAnnouncements } from '@/data/mockData';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { formatCurrency, formatDate } from '@/utils/helpers';
+
+export const ParentDashboard: React.FC = () => {
+  const { user } = useAuth();
+  
+  // Parent sees children linked by guardian phone (mock: show first 2 students)
+  const myChildren = mockStudents.slice(0, 2);
+  const activeAnnouncements = mockAnnouncements.filter(a => a.isActive).slice(0, 3);
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-6 text-primary-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold">Assalamu Alaikum, {user?.name?.split(' ')[0] || 'Parent'}</h1>
+        <p className="mt-2 opacity-90">Monitor your children's academic progress and school activities.</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><FiUsers className="w-5 h-5 text-primary" /></div>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{myChildren.length}</p>
+          <p className="text-sm text-muted-foreground">Children Enrolled</p>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><FiDollarSign className="w-5 h-5 text-primary" /></div>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{myChildren.filter(c => c.feeStatus === 'paid').length}/{myChildren.length}</p>
+          <p className="text-sm text-muted-foreground">Fees Paid</p>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center"><FiFileText className="w-5 h-5 text-secondary" /></div>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{myChildren.filter(c => mockResults.some(r => r.studentId === c.studentId)).length}</p>
+          <p className="text-sm text-muted-foreground">Results Available</p>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center"><FiCalendar className="w-5 h-5 text-accent-foreground" /></div>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{activeAnnouncements.length}</p>
+          <p className="text-sm text-muted-foreground">Announcements</p>
+        </div>
+      </div>
+
+      {/* Children Overview */}
+      <div className="bg-card rounded-2xl border border-border p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-lg text-foreground">My Children</h2>
+          <Link to="/parent/children"><Button variant="outline" size="sm">View All <FiArrowRight className="w-4 h-4 ml-2" /></Button></Link>
+        </div>
+        <div className="space-y-4">
+          {myChildren.map(child => {
+            const childAttendance = mockAttendance.filter(a => a.studentId === child.studentId);
+            const presentDays = childAttendance.filter(a => a.status === 'present').length;
+            const result = mockResults.find(r => r.studentId === child.studentId);
+            return (
+              <div key={child.id} className="p-4 rounded-xl bg-muted/50 border border-border">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground font-bold text-lg">{child.fullName[0]}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground">{child.fullName}</p>
+                    <p className="text-sm text-muted-foreground">{child.class} • {child.studentId}</p>
+                  </div>
+                  <Badge variant={child.feeStatus === 'paid' ? 'paid' : child.feeStatus === 'partial' ? 'partial' : 'unpaid'}>{child.feeStatus}</Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-2 rounded-lg bg-background">
+                    <p className="text-lg font-bold text-foreground">{presentDays}</p>
+                    <p className="text-xs text-muted-foreground">Days Present</p>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-background">
+                    <p className="text-lg font-bold text-foreground">{result ? `${result.averageScore.toFixed(0)}%` : 'N/A'}</p>
+                    <p className="text-xs text-muted-foreground">Average</p>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-background">
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(child.totalFee - child.amountPaid)}</p>
+                    <p className="text-xs text-muted-foreground">Balance</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Announcements */}
+      <div className="bg-card rounded-2xl border border-border p-6">
+        <h2 className="font-semibold text-lg text-foreground mb-4">School Announcements</h2>
+        <div className="space-y-3">
+          {activeAnnouncements.map(ann => (
+            <div key={ann.id} className="p-4 rounded-xl bg-muted/50">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{ann.title}</p>
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{ann.content}</p>
+                </div>
+                <Badge variant={ann.category === 'urgent' ? 'unpaid' : 'outline'}>{ann.category}</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">{formatDate(ann.createdAt)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
