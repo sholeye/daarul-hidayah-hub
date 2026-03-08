@@ -337,6 +337,19 @@ interface Translations {
   male: string;
   female: string;
   origin: string;
+  // Parent
+  parentPortal: string;
+  myChildren: string;
+  childrenEnrolled: string;
+  // Blog
+  blog: string;
+  blogSubtitle: string;
+  newPost: string;
+  publishPost: string;
+  blogTitle: string;
+  blogContent: string;
+  blogExcerpt: string;
+  blogTags: string;
 }
 
 const en: Translations = {
