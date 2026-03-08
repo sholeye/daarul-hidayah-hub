@@ -113,6 +113,7 @@ const Login: React.FC = () => {
       admin: 'admin@daarulhidayah.edu',
       instructor: 'teacher@daarulhidayah.edu',
       learner: 'student@daarulhidayah.edu',
+      parent: 'parent@daarulhidayah.edu',
     };
     
     const result = await login(demoEmails[role], 'demo1234', role);
