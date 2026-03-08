@@ -350,6 +350,79 @@ interface Translations {
   blogContent: string;
   blogExcerpt: string;
   blogTags: string;
+  backToAllPosts: string;
+  likes: string;
+  noBlogPosts: string;
+  pleaseLoginToLike: string;
+  // Contact page
+  contactTitle: string;
+  contactSubtitle: string;
+  getInTouch: string;
+  getInTouchDesc: string;
+  addressLabel: string;
+  addressValue: string;
+  phoneLabel: string;
+  emailLabel: string;
+  schoolHours: string;
+  schoolHoursWeekdays: string;
+  schoolHoursFriday: string;
+  sendMessage: string;
+  nameLabel: string;
+  phonePlaceholder: string;
+  emailPlaceholder: string;
+  subjectLabel: string;
+  subjectPlaceholder: string;
+  messageLabel: string;
+  messagePlaceholder: string;
+  sending: string;
+  messageSent: string;
+  // Login page
+  welcomeBackLogin: string;
+  signInToPortal: string;
+  selectRole: string;
+  administrator: string;
+  instructor: string;
+  student: string;
+  parent: string;
+  fullAccessDesc: string;
+  manageClassesDesc: string;
+  viewGradesDesc: string;
+  monitorChildrenDesc: string;
+  emailAddress: string;
+  enterEmail: string;
+  passwordLabel: string;
+  enterPassword: string;
+  signingIn: string;
+  signIn: string;
+  orQuickLoginAs: string;
+  demoModeNote: string;
+  backToHome: string;
+  // Quiz CTA
+  readyToCompete: string;
+  readyToCompeteDesc: string;
+  everySunday: string;
+  // Admin Blog
+  createAndManage: string;
+  totalPosts: string;
+  published: string;
+  totalLikes: string;
+  draft: string;
+  editBlogPost: string;
+  newBlogPost: string;
+  titleRequired: string;
+  excerptOptional: string;
+  tagsCommaSeparated: string;
+  contentRequired: string;
+  writeBlogPost: string;
+  updatePost: string;
+  blogPostUpdated: string;
+  blogPostPublished: string;
+  blogPostDeleted: string;
+  postUnpublished: string;
+  postPublished: string;
+  confirmDeletePost: string;
+  createFirstPost: string;
+  noBlogPostsYet: string;
 }
 
 const en: Translations = {
@@ -695,6 +768,75 @@ const en: Translations = {
   blogContent: 'Content',
   blogExcerpt: 'Excerpt',
   blogTags: 'Tags',
+  backToAllPosts: '← Back to all posts',
+  likes: 'likes',
+  noBlogPosts: 'No blog posts yet.',
+  pleaseLoginToLike: 'Please log in to like posts',
+  contactTitle: 'Contact',
+  contactSubtitle: 'Have questions about enrollment or our programs? We\'re here to help.',
+  getInTouch: 'Get in Touch',
+  getInTouchDesc: 'We welcome inquiries from parents and guardians interested in enrolling their children at Daarul Hidayah. Reach out to us through any of the following channels.',
+  addressLabel: 'Address',
+  addressValue: 'Ita Ika, Abeokuta, Ogun State, Nigeria',
+  phoneLabel: 'Phone',
+  emailLabel: 'Email',
+  schoolHours: 'School Hours',
+  schoolHoursWeekdays: 'Saturday - Thursday: 7:00 AM - 2:00 PM',
+  schoolHoursFriday: 'Friday: Closed',
+  sendMessage: 'Send a Message',
+  nameLabel: 'Name',
+  phonePlaceholder: 'Your phone number',
+  emailPlaceholder: 'your.email@example.com',
+  subjectLabel: 'Subject',
+  subjectPlaceholder: 'What is this about?',
+  messageLabel: 'Message',
+  messagePlaceholder: 'Your message...',
+  sending: 'Sending...',
+  messageSent: 'Message sent successfully! We will get back to you soon.',
+  welcomeBackLogin: 'Welcome Back',
+  signInToPortal: 'Sign in to Daarul Hidayah Portal',
+  selectRole: 'Select Role',
+  administrator: 'Administrator',
+  instructor: 'Instructor',
+  student: 'Student',
+  parent: 'Parent',
+  fullAccessDesc: 'Full access to all features',
+  manageClassesDesc: 'Manage classes and students',
+  viewGradesDesc: 'View grades and attendance',
+  monitorChildrenDesc: 'Monitor your children',
+  emailAddress: 'Email Address',
+  enterEmail: 'Enter your email',
+  passwordLabel: 'Password',
+  enterPassword: 'Enter your password',
+  signingIn: 'Signing in...',
+  signIn: 'Sign In',
+  orQuickLoginAs: 'Or quick login as',
+  demoModeNote: 'Demo mode: Any email and password (4+ chars) works',
+  backToHome: 'Back to Home',
+  readyToCompete: 'Ready to Compete?',
+  readyToCompeteDesc: 'If you\'re a representative, get your login code from your house captain and join the next competition!',
+  everySunday: 'Every Sunday',
+  createAndManage: 'Create and manage blog posts',
+  totalPosts: 'Total Posts',
+  published: 'Published',
+  totalLikes: 'Total Likes',
+  draft: 'Draft',
+  editBlogPost: 'Edit Blog Post',
+  newBlogPost: 'New Blog Post',
+  titleRequired: 'Title *',
+  excerptOptional: 'Short summary (optional)',
+  tagsCommaSeparated: 'Tags (comma-separated)',
+  contentRequired: 'Content *',
+  writeBlogPost: 'Write your blog post... (use double newlines for paragraphs)',
+  updatePost: 'Update Post',
+  blogPostUpdated: 'Blog post updated!',
+  blogPostPublished: 'Blog post published!',
+  blogPostDeleted: 'Blog post deleted!',
+  postUnpublished: 'Post unpublished',
+  postPublished: 'Post published',
+  confirmDeletePost: 'Are you sure you want to delete this blog post?',
+  createFirstPost: 'Create First Post',
+  noBlogPostsYet: 'No blog posts yet',
 };
 
 const ar: Translations = {
@@ -1040,6 +1182,75 @@ const ar: Translations = {
   blogContent: 'المحتوى',
   blogExcerpt: 'الملخص',
   blogTags: 'الوسوم',
+  backToAllPosts: '→ العودة لجميع المنشورات',
+  likes: 'إعجابات',
+  noBlogPosts: 'لا توجد منشورات بعد.',
+  pleaseLoginToLike: 'سجل دخولك للإعجاب بالمنشورات',
+  contactTitle: 'اتصل بنا',
+  contactSubtitle: 'لديك أسئلة حول التسجيل أو برامجنا؟ نحن هنا للمساعدة.',
+  getInTouch: 'تواصل معنا',
+  getInTouchDesc: 'نرحب بالاستفسارات من أولياء الأمور المهتمين بتسجيل أبنائهم في دار الهداية. تواصل معنا عبر أي من القنوات التالية.',
+  addressLabel: 'العنوان',
+  addressValue: 'إيتا إيكا، أبيوكوتا، ولاية أوغون، نيجيريا',
+  phoneLabel: 'الهاتف',
+  emailLabel: 'البريد الإلكتروني',
+  schoolHours: 'ساعات العمل',
+  schoolHoursWeekdays: 'السبت - الخميس: 7:00 صباحاً - 2:00 مساءً',
+  schoolHoursFriday: 'الجمعة: مغلق',
+  sendMessage: 'أرسل رسالة',
+  nameLabel: 'الاسم',
+  phonePlaceholder: 'رقم هاتفك',
+  emailPlaceholder: 'بريدك@مثال.com',
+  subjectLabel: 'الموضوع',
+  subjectPlaceholder: 'ما موضوع رسالتك؟',
+  messageLabel: 'الرسالة',
+  messagePlaceholder: 'رسالتك...',
+  sending: 'جارٍ الإرسال...',
+  messageSent: 'تم إرسال الرسالة بنجاح! سنتواصل معك قريباً.',
+  welcomeBackLogin: 'مرحباً بعودتك',
+  signInToPortal: 'تسجيل الدخول إلى بوابة دار الهداية',
+  selectRole: 'اختر الدور',
+  administrator: 'المسؤول',
+  instructor: 'المعلم',
+  student: 'الطالب',
+  parent: 'ولي الأمر',
+  fullAccessDesc: 'وصول كامل لجميع الميزات',
+  manageClassesDesc: 'إدارة الفصول والطلاب',
+  viewGradesDesc: 'عرض الدرجات والحضور',
+  monitorChildrenDesc: 'متابعة أبنائك',
+  emailAddress: 'البريد الإلكتروني',
+  enterEmail: 'أدخل بريدك الإلكتروني',
+  passwordLabel: 'كلمة المرور',
+  enterPassword: 'أدخل كلمة المرور',
+  signingIn: 'جارٍ تسجيل الدخول...',
+  signIn: 'تسجيل الدخول',
+  orQuickLoginAs: 'أو دخول سريع كـ',
+  demoModeNote: 'الوضع التجريبي: أي بريد وكلمة مرور (4+ أحرف) تعمل',
+  backToHome: 'العودة للرئيسية',
+  readyToCompete: 'مستعد للمنافسة؟',
+  readyToCompeteDesc: 'إذا كنت ممثلاً، احصل على رمز الدخول من قائد بيتك وانضم للمسابقة القادمة!',
+  everySunday: 'كل يوم أحد',
+  createAndManage: 'إنشاء وإدارة المنشورات',
+  totalPosts: 'إجمالي المنشورات',
+  published: 'المنشورة',
+  totalLikes: 'إجمالي الإعجابات',
+  draft: 'مسودة',
+  editBlogPost: 'تعديل المنشور',
+  newBlogPost: 'منشور جديد',
+  titleRequired: 'العنوان *',
+  excerptOptional: 'ملخص قصير (اختياري)',
+  tagsCommaSeparated: 'الوسوم (مفصولة بفاصلة)',
+  contentRequired: 'المحتوى *',
+  writeBlogPost: 'اكتب منشورك... (استخدم أسطر فارغة مزدوجة للفقرات)',
+  updatePost: 'تحديث المنشور',
+  blogPostUpdated: 'تم تحديث المنشور!',
+  blogPostPublished: 'تم نشر المنشور!',
+  blogPostDeleted: 'تم حذف المنشور!',
+  postUnpublished: 'تم إلغاء النشر',
+  postPublished: 'تم النشر',
+  confirmDeletePost: 'هل أنت متأكد من حذف هذا المنشور؟',
+  createFirstPost: 'أنشئ أول منشور',
+  noBlogPostsYet: 'لا توجد منشورات بعد',
 };
 
 const translations: Record<Language, Translations> = { en, ar };

@@ -37,7 +37,7 @@ const Quiz: React.FC = () => {
             <div className="max-w-3xl mx-auto text-center mb-10">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-5">
                 <FiAward className="w-4 h-4" />
-                <span>Every Sunday</span>
+                <span>{t.everySunday}</span>
               </div>
               
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight">
@@ -91,10 +91,10 @@ const Quiz: React.FC = () => {
         <section className="py-12 md:py-16 bg-gradient-to-r from-primary to-primary/80">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-xl md:text-2xl font-bold text-primary-foreground mb-3">
-              Ready to Compete?
+              {t.readyToCompete}
             </h2>
             <p className="text-primary-foreground/80 mb-6 max-w-lg mx-auto text-sm md:text-base">
-              If you're a representative, get your login code from your house captain and join the next competition!
+              {t.readyToCompeteDesc}
             </p>
             <Link 
               to="/#contact-cta"
