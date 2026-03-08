@@ -18,7 +18,17 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
+
+  const getRoleBasedPath = (role: string) => {
+    switch (role) {
+      case 'admin': return '/admin';
+      case 'instructor': return '/instructor';
+      case 'learner': return '/learner';
+      case 'parent': return '/parent';
+      default: return '/';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +37,19 @@ const Login: React.FC = () => {
     setIsLoading(false);
     if (result.success) {
       toast.success(t.success || 'Login successful!');
-      // Role-based redirect will happen via onAuthStateChange
-      navigate(from === '/' ? from : from);
+      // Fetch the user's role to redirect properly
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', sessionData.session.user.id)
+          .single();
+        const role = roleData?.role || 'learner';
+        navigate(from || getRoleBasedPath(role), { replace: true });
+      } else {
+        navigate(from || '/', { replace: true });
+      }
     } else {
       toast.error(result.message);
     }

@@ -28,52 +28,45 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Listen for auth state changes
+  // Helper to fetch user with role
+  const fetchUserWithRole = async (sessionUser: any) => {
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', sessionUser.id)
+      .single();
+
+    const role = roleData?.role as UserRole || 'learner';
+    const fullName = sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User';
+
+    setUser({
+      id: sessionUser.id,
+      email: sessionUser.email || '',
+      name: fullName,
+      role,
+    });
+    setIsLoading(false);
+  };
+
+  // Listen for auth state changes — no await in the callback to prevent deadlocks
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        // Fetch role from user_roles table
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .single();
-
-        const role = roleData?.role as UserRole || 'learner';
-        const fullName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User';
-
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          name: fullName,
-          role,
-        });
+        // Use setTimeout to avoid blocking the auth state change
+        setTimeout(() => fetchUserWithRole(session.user), 0);
       } else {
         setUser(null);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     // Check existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .single();
-
-        const role = roleData?.role as UserRole || 'learner';
-        const fullName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User';
-
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          name: fullName,
-          role,
-        });
+        fetchUserWithRole(session.user);
+      } else {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
