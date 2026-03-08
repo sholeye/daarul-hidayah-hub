@@ -1,11 +1,12 @@
 /**
- * Admin Blog Management - Create, edit, delete blog posts (shared state)
+ * Admin Blog Management - Create, edit, delete blog posts (real Supabase)
  */
 
 import React, { useState } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiCalendar, FiHeart, FiEye, FiEyeOff } from 'react-icons/fi';
 import { BlogPost } from '@/types';
 import { useSharedData } from '@/contexts/SharedDataContext';
+import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -88,39 +89,41 @@ const BlogModal: React.FC<BlogModalProps> = ({ isOpen, onClose, post, onSubmit }
 
 export const AdminBlogPage: React.FC = () => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { blogPosts, addBlogPost, updateBlogPost, deleteBlogPost } = useSharedData();
   const [showModal, setShowModal] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | undefined>();
 
-  const handleSubmit = (data: Partial<BlogPost>) => {
-    if (editingPost) {
-      updateBlogPost(editingPost.id, { ...data, updatedAt: new Date().toISOString().split('T')[0] });
-      toast.success(t.blogPostUpdated);
-    } else {
-      const newPost: BlogPost = {
-        ...data as BlogPost,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0],
-        likes: [],
-      };
-      addBlogPost(newPost);
-      toast.success(t.blogPostPublished);
+  const handleSubmit = async (data: Partial<BlogPost>) => {
+    try {
+      if (editingPost) {
+        await updateBlogPost(editingPost.id, { ...data, updatedAt: new Date().toISOString().split('T')[0] });
+        toast.success(t.blogPostUpdated);
+      } else {
+        await addBlogPost(data, user?.id || '');
+        toast.success(t.blogPostPublished);
+      }
+      setEditingPost(undefined);
+    } catch (err) {
+      toast.error('Failed to save blog post');
     }
-    setEditingPost(undefined);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm(t.confirmDeletePost)) {
-      deleteBlogPost(id);
-      toast.success(t.blogPostDeleted);
+      try {
+        await deleteBlogPost(id);
+        toast.success(t.blogPostDeleted);
+      } catch { toast.error('Failed to delete'); }
     }
   };
 
-  const togglePublish = (id: string) => {
+  const togglePublish = async (id: string) => {
     const post = blogPosts.find(p => p.id === id);
-    updateBlogPost(id, { isPublished: !post?.isPublished });
-    toast.success(post?.isPublished ? t.postUnpublished : t.postPublished);
+    try {
+      await updateBlogPost(id, { isPublished: !post?.isPublished });
+      toast.success(post?.isPublished ? t.postUnpublished : t.postPublished);
+    } catch { toast.error('Failed to update'); }
   };
 
   return (
