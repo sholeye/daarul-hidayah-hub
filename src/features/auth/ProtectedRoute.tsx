@@ -1,8 +1,5 @@
 /**
- * ProtectedRoute - Route protection with role-based access
- * 
- * NOTE: Demo mode enabled - authentication bypassed for testing.
- * Uncomment the checks below when ready for production.
+ * ProtectedRoute - Real authentication with role-based access
  */
 
 import React from 'react';
@@ -16,16 +13,20 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  // ============= DEMO MODE - COMMENT OUT FOR PRODUCTION =============
-  // For demo purposes, bypass auth checks completely
-  // This allows viewing any dashboard without logging in
-  return <>{children}</>;
-  // ==================================================================
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-  /* PRODUCTION CODE - UNCOMMENT WHEN READY:
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -35,5 +36,4 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   return <>{children}</>;
-  */
 };

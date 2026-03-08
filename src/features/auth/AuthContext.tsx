@@ -1,222 +1,183 @@
 /**
- * =============================================================================
- * AUTHENTICATION CONTEXT
- * =============================================================================
+ * Authentication Context - Real Supabase Auth
  * 
- * Provides authentication state and methods throughout the application.
- * Supports predefined admin login and auto-generated student credentials.
- * 
- * Admin Credentials:
- * - Username: mudeer@dh.edu
- * - Password: daarulhidayah1447
- * 
- * Instructor Credentials:
- * - Username: muallim@dh.edu
- * - Password: daarulhidayah1447
- * =============================================================================
+ * Students: auto-generated @dh.edu emails, admin creates accounts
+ * Teachers/Parents: real emails, sign up themselves
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '@/types';
-import { mockUsers, mockStudents } from '@/data/mockData';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
-// ---------------------------------------------------------------------------
-// Predefined Credentials
-// ---------------------------------------------------------------------------
-const PREDEFINED_CREDENTIALS = {
-  admin: {
-    email: 'mudeer@dh.edu',
-    password: 'daarulhidayah1447',
-    name: 'Administrator',
-  },
-  instructor: {
-    email: 'muallim@dh.edu',
-    password: 'daarulhidayah1447',
-    name: 'Instructor',
-  },
-};
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string, selectedRole?: UserRole) => Promise<{ success: boolean; message: string }>;
-  logout: () => void;
-  getStudentByUserId: () => typeof mockStudents[0] | null;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
+  signup: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ success: boolean; message: string }>;
+  logout: () => Promise<void>;
+  createStudentAccount: (email: string, password: string, fullName: string) => Promise<{ success: boolean; userId?: string; message: string }>;
+  getStudentByUserId: () => null; // Will use shared data now
   requestPasswordReset: (studentId: string) => Promise<{ success: boolean; message: string }>;
 }
 
-// ---------------------------------------------------------------------------
-// Context Creation
-// ---------------------------------------------------------------------------
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ---------------------------------------------------------------------------
-// Auth Provider Component
-// ---------------------------------------------------------------------------
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialize user state from localStorage for persistence
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('daarul_hidayah_user');
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  /**
-   * Login function - supports predefined credentials and demo mode
-   */
-  const login = useCallback(async (
-    email: string, 
-    password: string,
-    selectedRole?: UserRole
-  ): Promise<{ success: boolean; message: string }> => {
-    // Simulate API delay for realistic UX
-    await new Promise(resolve => setTimeout(resolve, 600));
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        // Fetch role from user_roles table
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
 
-    const emailLower = email.toLowerCase().trim();
-    const passwordTrimmed = password.trim();
+        const role = roleData?.role as UserRole || 'learner';
+        const fullName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User';
 
-    // Check predefined admin credentials
-    if (emailLower === PREDEFINED_CREDENTIALS.admin.email && 
-        passwordTrimmed === PREDEFINED_CREDENTIALS.admin.password) {
-      const adminUser: User = {
-        id: 'admin-001',
-        email: PREDEFINED_CREDENTIALS.admin.email,
-        name: PREDEFINED_CREDENTIALS.admin.name,
-        role: 'admin',
-      };
-      setUser(adminUser);
-      localStorage.setItem('daarul_hidayah_user', JSON.stringify(adminUser));
-      return { success: true, message: 'Login successful!' };
-    }
-
-    // Check predefined instructor credentials
-    if (emailLower === PREDEFINED_CREDENTIALS.instructor.email && 
-        passwordTrimmed === PREDEFINED_CREDENTIALS.instructor.password) {
-      const instructorUser: User = {
-        id: 'instructor-001',
-        email: PREDEFINED_CREDENTIALS.instructor.email,
-        name: PREDEFINED_CREDENTIALS.instructor.name,
-        role: 'instructor',
-      };
-      setUser(instructorUser);
-      localStorage.setItem('daarul_hidayah_user', JSON.stringify(instructorUser));
-      return { success: true, message: 'Login successful!' };
-    }
-
-    // Check for student login (auto-generated credentials)
-    // Student username format: firstname.lastname@student.dh.edu
-    if (emailLower.includes('@student.dh.edu')) {
-      const student = mockStudents.find(s => {
-        const expectedUsername = s.fullName.toLowerCase().replace(/\s+/g, '.') + '@student.dh.edu';
-        return expectedUsername === emailLower;
-      });
-
-      if (student) {
-        // For demo: password is studentId (in real app, this would be hashed)
-        if (passwordTrimmed === student.studentId || passwordTrimmed.length >= 4) {
-          const studentUser: User = {
-            id: student.id,
-            email: emailLower,
-            name: student.fullName,
-            role: 'learner',
-          };
-          setUser(studentUser);
-          localStorage.setItem('daarul_hidayah_user', JSON.stringify(studentUser));
-          return { success: true, message: 'Login successful!' };
-        }
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          name: fullName,
+          role,
+        });
+      } else {
+        setUser(null);
       }
-    }
+      setIsLoading(false);
+    });
 
-    // DEMO MODE: Allow any email/password with selected role for testing
-    if (email.includes('@') && password.length >= 4) {
-      const foundUser: User = {
-        id: Date.now().toString(),
-        email: email,
-        name: email.split('@')[0].replace(/\./g, ' ').replace(/^\w/, c => c.toUpperCase()),
-        role: selectedRole || 'admin',
-      };
-      setUser(foundUser);
-      localStorage.setItem('daarul_hidayah_user', JSON.stringify(foundUser));
-      return { success: true, message: 'Login successful (Demo Mode)!' };
-    }
-    
-    return { success: false, message: 'Invalid credentials. Please check your email and password.' };
+    // Check existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+
+        const role = roleData?.role as UserRole || 'learner';
+        const fullName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User';
+
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          name: fullName,
+          role,
+        });
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  /**
-   * Logout function - clears session
-   */
-  const logout = useCallback(() => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    if (data.user) {
+      return { success: true, message: 'Login successful!' };
+    }
+
+    return { success: false, message: 'Login failed. Please try again.' };
+  }, []);
+
+  const signup = useCallback(async (email: string, password: string, fullName: string, role: UserRole): Promise<{ success: boolean; message: string }> => {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
+      options: {
+        data: {
+          full_name: fullName,
+          role,
+        },
+      },
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    if (data.user) {
+      return { success: true, message: 'Account created successfully! You can now log in.' };
+    }
+
+    return { success: false, message: 'Signup failed. Please try again.' };
+  }, []);
+
+  const createStudentAccount = useCallback(async (email: string, password: string, fullName: string): Promise<{ success: boolean; userId?: string; message: string }> => {
+    // Admin creates student account
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          role: 'learner',
+        },
+      },
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, userId: data.user?.id, message: 'Student account created!' };
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('daarul_hidayah_user');
   }, []);
 
-  /**
-   * Get student data linked to current user (for learner role)
-   */
-  const getStudentByUserId = useCallback(() => {
-    if (!user || user.role !== 'learner') return null;
-    return mockStudents.find(s => s.email === user.email) || mockStudents[0];
-  }, [user]);
+  const getStudentByUserId = useCallback(() => null, []);
 
-  /**
-   * Request password reset - notifies admin (for students)
-   */
   const requestPasswordReset = useCallback(async (studentId: string): Promise<{ success: boolean; message: string }> => {
-    // In real app, this would create a notification for admin in database
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return { 
-      success: true, 
-      message: 'Password reset request sent to administrator. You will receive your new password in person.' 
-    };
+    const { error } = await supabase.from('password_reset_requests').insert({
+      student_id: studentId,
+      status: 'pending',
+    });
+    if (error) return { success: false, message: 'Failed to submit request.' };
+    return { success: true, message: 'Password reset request sent to administrator.' };
   }, []);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated: !!user, 
-      login, 
-      logout,
-      getStudentByUserId,
-      requestPasswordReset,
+    <AuthContext.Provider value={{
+      user, isAuthenticated: !!user, isLoading,
+      login, signup, logout, createStudentAccount,
+      getStudentByUserId, requestPasswordReset,
     }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// ---------------------------------------------------------------------------
-// Custom Hooks
-// ---------------------------------------------------------------------------
-
-/**
- * Hook to access auth context
- */
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
 
-/**
- * Hook for role-based route protection
- */
 export const useRequireRole = (allowedRoles: UserRole[]): { hasAccess: boolean; role: UserRole | null } => {
   const { user } = useAuth();
-  const hasAccess = user ? allowedRoles.includes(user.role) : false;
-  return { hasAccess, role: user?.role || null };
+  return { hasAccess: user ? allowedRoles.includes(user.role) : false, role: user?.role || null };
 };
 
-/**
- * Generate student credentials
- */
 export const generateStudentCredentials = (fullName: string, studentId: string) => {
-  const username = fullName.toLowerCase().replace(/\s+/g, '.') + '@student.dh.edu';
-  // In real app, password would be hashed before storing
-  const password = studentId; // Initial password is studentId
-  return { username, password };
+  const username = fullName.toLowerCase().replace(/\s+/g, '.') + '@dh.edu';
+  return { username, password: studentId };
 };
