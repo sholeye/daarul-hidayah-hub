@@ -141,11 +141,19 @@ export const Navbar: React.FC = () => {
                   {link.label}
                 </Link>
               ))}
-              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="outline" className="w-full mt-2">
-                  {t.portalLogin}
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link to={getDashboardPath()} onClick={() => setIsMenuOpen(false)}>
+                  <Button className="w-full mt-2">
+                    {t.dashboard || 'Dashboard'}
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="outline" className="w-full mt-2">
+                    {t.portalLogin}
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         )}
