@@ -94,11 +94,19 @@ export const Navbar: React.FC = () => {
               )}
             </button>
 
-            <Link to="/login" className="hidden md:block">
-              <Button variant="outline" size="sm">
-                {t.portalLogin}
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link to={getDashboardPath()} className="hidden md:block">
+                <Button size="sm">
+                  {t.dashboard || 'Dashboard'}
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/login" className="hidden md:block">
+                <Button variant="outline" size="sm">
+                  {t.portalLogin}
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile Menu Toggle */}
             <button
