@@ -1,11 +1,11 @@
 /**
- * Admin Blog Management - Create, edit, delete blog posts
+ * Admin Blog Management - Create, edit, delete blog posts (shared state)
  */
 
 import React, { useState } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiCalendar, FiHeart, FiEye, FiEyeOff } from 'react-icons/fi';
-import { mockBlogPosts } from '@/data/blogMockData';
 import { BlogPost } from '@/types';
+import { useSharedData } from '@/contexts/SharedDataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -88,13 +88,13 @@ const BlogModal: React.FC<BlogModalProps> = ({ isOpen, onClose, post, onSubmit }
 
 export const AdminBlogPage: React.FC = () => {
   const { t } = useLanguage();
-  const [posts, setPosts] = useState<BlogPost[]>(mockBlogPosts);
+  const { blogPosts, addBlogPost, updateBlogPost, deleteBlogPost } = useSharedData();
   const [showModal, setShowModal] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | undefined>();
 
   const handleSubmit = (data: Partial<BlogPost>) => {
     if (editingPost) {
-      setPosts(posts.map(p => p.id === editingPost.id ? { ...p, ...data, updatedAt: new Date().toISOString().split('T')[0] } as BlogPost : p));
+      updateBlogPost(editingPost.id, { ...data, updatedAt: new Date().toISOString().split('T')[0] });
       toast.success(t.blogPostUpdated);
     } else {
       const newPost: BlogPost = {
@@ -104,7 +104,7 @@ export const AdminBlogPage: React.FC = () => {
         updatedAt: new Date().toISOString().split('T')[0],
         likes: [],
       };
-      setPosts([newPost, ...posts]);
+      addBlogPost(newPost);
       toast.success(t.blogPostPublished);
     }
     setEditingPost(undefined);
@@ -112,14 +112,14 @@ export const AdminBlogPage: React.FC = () => {
 
   const handleDelete = (id: string) => {
     if (confirm(t.confirmDeletePost)) {
-      setPosts(posts.filter(p => p.id !== id));
+      deleteBlogPost(id);
       toast.success(t.blogPostDeleted);
     }
   };
 
   const togglePublish = (id: string) => {
-    const post = posts.find(p => p.id === id);
-    setPosts(posts.map(p => p.id === id ? { ...p, isPublished: !p.isPublished } : p));
+    const post = blogPosts.find(p => p.id === id);
+    updateBlogPost(id, { isPublished: !post?.isPublished });
     toast.success(post?.isPublished ? t.postUnpublished : t.postPublished);
   };
 
@@ -137,21 +137,21 @@ export const AdminBlogPage: React.FC = () => {
 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-card rounded-xl border border-border p-4">
-          <p className="text-2xl font-bold text-foreground">{posts.length}</p>
+          <p className="text-2xl font-bold text-foreground">{blogPosts.length}</p>
           <p className="text-sm text-muted-foreground">{t.totalPosts}</p>
         </div>
         <div className="bg-card rounded-xl border border-border p-4">
-          <p className="text-2xl font-bold text-primary">{posts.filter(p => p.isPublished).length}</p>
+          <p className="text-2xl font-bold text-primary">{blogPosts.filter(p => p.isPublished).length}</p>
           <p className="text-sm text-muted-foreground">{t.published}</p>
         </div>
         <div className="bg-card rounded-xl border border-border p-4">
-          <p className="text-2xl font-bold text-secondary">{posts.reduce((s, p) => s + p.likes.length, 0)}</p>
+          <p className="text-2xl font-bold text-secondary">{blogPosts.reduce((s, p) => s + p.likes.length, 0)}</p>
           <p className="text-sm text-muted-foreground">{t.totalLikes}</p>
         </div>
       </div>
 
       <div className="space-y-4">
-        {posts.map(post => (
+        {blogPosts.map(post => (
           <div key={post.id} className={`bg-card rounded-2xl border border-border p-6 shadow-soft transition-opacity ${!post.isPublished ? 'opacity-60' : ''}`}>
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
@@ -180,7 +180,7 @@ export const AdminBlogPage: React.FC = () => {
             </div>
           </div>
         ))}
-        {posts.length === 0 && (
+        {blogPosts.length === 0 && (
           <div className="text-center py-12 bg-card rounded-2xl border border-border">
             <p className="text-muted-foreground">{t.noBlogPostsYet}</p>
             <Button onClick={() => setShowModal(true)} className="mt-4">{t.createFirstPost}</Button>

@@ -1,13 +1,12 @@
 /**
- * =============================================================================
- * INSTRUCTOR ATTENDANCE PAGE - Efficient marking (present/absent only)
- * =============================================================================
+ * Instructor Attendance Page - Shared state
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FiCheckCircle, FiXCircle, FiCalendar, FiCheck } from 'react-icons/fi';
-import { mockStudents, schoolClasses } from '@/data/mockData';
+import { schoolClasses } from '@/data/mockData';
 import { AttendanceRecord } from '@/types';
+import { useSharedData } from '@/contexts/SharedDataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -16,13 +15,13 @@ import { toast } from 'sonner';
 
 export const InstructorAttendance: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
+  const { students, attendance, setAttendanceRecord, bulkSetAttendance } = useSharedData();
   const assignedClasses = schoolClasses.slice(0, 2);
   const [selectedClass, setSelectedClass] = useState(assignedClasses[0]?.name || '');
   const [selectedDate, setSelectedDate] = useState(today);
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
   const isFutureDate = selectedDate > today;
-  const students = mockStudents.filter(s => s.class === selectedClass);
+  const classStudents = students.filter(s => s.class === selectedClass);
 
   const getStatus = useCallback((studentId: string): 'present' | 'absent' | null => {
     const record = attendance.find(a => a.studentId === studentId && a.date === selectedDate);
@@ -31,30 +30,25 @@ export const InstructorAttendance: React.FC = () => {
 
   const toggleAttendance = useCallback((studentId: string, status: 'present' | 'absent') => {
     if (isFutureDate) { toast.error('Cannot mark future dates'); return; }
-    
-    const existingIndex = attendance.findIndex(a => a.studentId === studentId && a.date === selectedDate);
-    let newAttendance: AttendanceRecord[];
-
-    if (existingIndex >= 0) {
-      newAttendance = attendance.map((a, i) => i === existingIndex ? { ...a, status } : a);
-    } else {
-      newAttendance = [...attendance, { id: Date.now().toString(), studentId, date: selectedDate, status, checkInTime: status === 'present' ? new Date().toTimeString().slice(0, 5) : undefined }];
-    }
-    setAttendance(newAttendance);
-    const student = students.find(s => s.studentId === studentId);
+    setAttendanceRecord({
+      id: Date.now().toString(), studentId, date: selectedDate, status,
+      checkInTime: status === 'present' ? new Date().toTimeString().slice(0, 5) : undefined,
+    });
+    const student = classStudents.find(s => s.studentId === studentId);
     toast.success(`${student?.fullName} marked ${status}`, { duration: 1500 });
-  }, [attendance, selectedDate, isFutureDate, students]);
+  }, [selectedDate, isFutureDate, classStudents, setAttendanceRecord]);
 
   const markAllPresent = () => {
     if (isFutureDate) { toast.error('Cannot mark future dates'); return; }
-    const newRecords = students.filter(s => !getStatus(s.studentId)).map(s => ({
-      id: Date.now().toString() + s.studentId, studentId: s.studentId, date: selectedDate, status: 'present' as const, checkInTime: new Date().toTimeString().slice(0, 5)
+    const newRecords = classStudents.filter(s => !getStatus(s.studentId)).map(s => ({
+      id: Date.now().toString() + s.studentId, studentId: s.studentId, date: selectedDate,
+      status: 'present' as const, checkInTime: new Date().toTimeString().slice(0, 5),
     }));
-    if (newRecords.length > 0) { setAttendance(prev => [...prev, ...newRecords]); toast.success(`Marked ${newRecords.length} present`); }
+    if (newRecords.length > 0) { bulkSetAttendance(newRecords); toast.success(`Marked ${newRecords.length} present`); }
   };
 
-  const presentCount = students.filter(s => getStatus(s.studentId) === 'present').length;
-  const absentCount = students.filter(s => getStatus(s.studentId) === 'absent').length;
+  const presentCount = classStudents.filter(s => getStatus(s.studentId) === 'present').length;
+  const absentCount = classStudents.filter(s => getStatus(s.studentId) === 'absent').length;
 
   return (
     <div className="space-y-6">
@@ -64,24 +58,13 @@ export const InstructorAttendance: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><FiCheckCircle className="w-5 h-5 text-primary" /></div>
-          <div><p className="text-xl font-bold text-foreground">{presentCount}</p><p className="text-sm text-muted-foreground">Present</p></div>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center"><FiXCircle className="w-5 h-5 text-destructive" /></div>
-          <div><p className="text-xl font-bold text-foreground">{absentCount}</p><p className="text-sm text-muted-foreground">Absent</p></div>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center"><span className="text-lg font-bold text-foreground">{students.length}</span></div>
-          <div><p className="text-sm text-muted-foreground">Total Students</p></div>
-        </div>
+        <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><FiCheckCircle className="w-5 h-5 text-primary" /></div><div><p className="text-xl font-bold text-foreground">{presentCount}</p><p className="text-sm text-muted-foreground">Present</p></div></div>
+        <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center"><FiXCircle className="w-5 h-5 text-destructive" /></div><div><p className="text-xl font-bold text-foreground">{absentCount}</p><p className="text-sm text-muted-foreground">Absent</p></div></div>
+        <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center"><span className="text-lg font-bold text-foreground">{classStudents.length}</span></div><div><p className="text-sm text-muted-foreground">Total Students</p></div></div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="h-10 px-4 rounded-lg border border-input bg-background text-foreground">
-          {assignedClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-        </select>
+        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="h-10 px-4 rounded-lg border border-input bg-background text-foreground">{assignedClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select>
         <div className="relative"><FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" /><Input type="date" value={selectedDate} max={today} onChange={(e) => setSelectedDate(e.target.value)} className="pl-12 w-full sm:w-48" /></div>
       </div>
 
@@ -89,16 +72,9 @@ export const InstructorAttendance: React.FC = () => {
 
       <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
         <table className="w-full">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Student</th>
-              <th className="text-center px-6 py-4 text-sm font-semibold text-foreground">Present</th>
-              <th className="text-center px-6 py-4 text-sm font-semibold text-foreground">Absent</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Status</th>
-            </tr>
-          </thead>
+          <thead className="bg-muted/50"><tr><th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Student</th><th className="text-center px-6 py-4 text-sm font-semibold text-foreground">Present</th><th className="text-center px-6 py-4 text-sm font-semibold text-foreground">Absent</th><th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Status</th></tr></thead>
           <tbody className="divide-y divide-border">
-            {students.map((student) => {
+            {classStudents.map((student) => {
               const status = getStatus(student.studentId);
               return (
                 <tr key={student.id} className="hover:bg-muted/30">

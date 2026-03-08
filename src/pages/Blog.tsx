@@ -6,9 +6,9 @@ import React, { useState } from 'react';
 import { Navbar } from '@/features/common/Navbar';
 import { Footer } from '@/features/common/Footer';
 import { FiHeart, FiCalendar, FiTag, FiUser } from 'react-icons/fi';
-import { mockBlogPosts } from '@/data/blogMockData';
 import { BlogPost } from '@/types';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/utils/helpers';
 import { toast } from 'sonner';
@@ -17,7 +17,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const Blog: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { t, isRTL } = useLanguage();
-  const [posts, setPosts] = useState<BlogPost[]>(mockBlogPosts.filter(p => p.isPublished));
+  const { blogPosts, toggleBlogLike } = useSharedData();
+  const publishedPosts = blogPosts.filter(p => p.isPublished);
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
 
   const handleLike = (postId: string) => {
@@ -25,30 +26,13 @@ const Blog: React.FC = () => {
       toast.error(t.pleaseLoginToLike);
       return;
     }
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        const hasLiked = p.likes.includes(user.id);
-        return {
-          ...p,
-          likes: hasLiked ? p.likes.filter(id => id !== user.id) : [...p.likes, user.id],
-        };
-      }
-      return p;
-    }));
-    // Also update selectedPost if viewing it
-    if (selectedPost?.id === postId) {
-      setSelectedPost(prev => {
-        if (!prev || !user) return prev;
-        const hasLiked = prev.likes.includes(user.id);
-        return {
-          ...prev,
-          likes: hasLiked ? prev.likes.filter(id => id !== user.id) : [...prev.likes, user.id],
-        };
-      });
-    }
+    toggleBlogLike(postId, user.id);
   };
 
   const hasLiked = (post: BlogPost) => user ? post.likes.includes(user.id) : false;
+
+  // Keep selectedPost in sync with shared data
+  const currentSelectedPost = selectedPost ? publishedPosts.find(p => p.id === selectedPost.id) || null : null;
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -65,39 +49,39 @@ const Blog: React.FC = () => {
         {/* Blog Grid */}
         <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
-            {selectedPost ? (
+            {currentSelectedPost ? (
               <div className="max-w-3xl mx-auto">
                 <button onClick={() => setSelectedPost(null)} className="text-primary hover:underline mb-6 text-sm font-medium">
                   {t.backToAllPosts}
                 </button>
                 <article className="bg-card rounded-2xl border border-border p-6 md:p-8">
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {selectedPost.tags.map(tag => (
+                    {currentSelectedPost.tags.map(tag => (
                       <Badge key={tag} variant="outline"><FiTag className="w-3 h-3 mr-1" />{tag}</Badge>
                     ))}
                   </div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">{selectedPost.title}</h1>
+                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">{currentSelectedPost.title}</h1>
                   <div className="flex items-center gap-4 mb-8 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><FiUser className="w-4 h-4" />{selectedPost.author}</span>
-                    <span className="flex items-center gap-1"><FiCalendar className="w-4 h-4" />{formatDate(selectedPost.createdAt)}</span>
+                    <span className="flex items-center gap-1"><FiUser className="w-4 h-4" />{currentSelectedPost.author}</span>
+                    <span className="flex items-center gap-1"><FiCalendar className="w-4 h-4" />{formatDate(currentSelectedPost.createdAt)}</span>
                   </div>
                   <div className="prose prose-lg max-w-none text-foreground">
-                    {selectedPost.content.split('\n\n').map((p, i) => (
+                    {currentSelectedPost.content.split('\n\n').map((p, i) => (
                       <p key={i} className="mb-4 text-foreground/90 leading-relaxed">{p}</p>
                     ))}
                   </div>
                   <div className="mt-8 pt-6 border-t border-border flex items-center gap-4">
-                    <button onClick={() => handleLike(selectedPost.id)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${hasLiked(selectedPost) ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
-                      <FiHeart className={`w-5 h-5 ${hasLiked(selectedPost) ? 'fill-current' : ''}`} />
-                      <span>{selectedPost.likes.length} {t.likes}</span>
+                    <button onClick={() => handleLike(currentSelectedPost.id)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${hasLiked(currentSelectedPost) ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+                      <FiHeart className={`w-5 h-5 ${hasLiked(currentSelectedPost) ? 'fill-current' : ''}`} />
+                      <span>{currentSelectedPost.likes.length} {t.likes}</span>
                     </button>
                   </div>
                 </article>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {posts.map(post => (
+                {publishedPosts.map(post => (
                   <article key={post.id} className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="p-6">
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -126,7 +110,7 @@ const Blog: React.FC = () => {
                 ))}
               </div>
             )}
-            {posts.length === 0 && (
+            {publishedPosts.length === 0 && (
               <div className="text-center py-12"><p className="text-muted-foreground">{t.noBlogPosts}</p></div>
             )}
           </div>
