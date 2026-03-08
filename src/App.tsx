@@ -10,6 +10,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import { ThemeProvider } from "@/features/app/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { SharedDataProvider } from "@/contexts/SharedDataContext";
 import { ProtectedRoute } from "@/features/auth/ProtectedRoute";
 
 // Public Pages
