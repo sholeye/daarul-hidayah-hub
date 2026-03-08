@@ -12,18 +12,20 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/utils/helpers';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Blog: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
+  const { t, isRTL } = useLanguage();
   const [posts, setPosts] = useState<BlogPost[]>(mockBlogPosts.filter(p => p.isPublished));
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
 
   const handleLike = (postId: string) => {
     if (!isAuthenticated || !user) {
-      toast.error('Please log in to like posts');
+      toast.error(t.pleaseLoginToLike);
       return;
     }
-    setPosts(posts.map(p => {
+    setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         const hasLiked = p.likes.includes(user.id);
         return {
@@ -33,21 +35,30 @@ const Blog: React.FC = () => {
       }
       return p;
     }));
+    // Also update selectedPost if viewing it
+    if (selectedPost?.id === postId) {
+      setSelectedPost(prev => {
+        if (!prev || !user) return prev;
+        const hasLiked = prev.likes.includes(user.id);
+        return {
+          ...prev,
+          likes: hasLiked ? prev.likes.filter(id => id !== user.id) : [...prev.likes, user.id],
+        };
+      });
+    }
   };
 
   const hasLiked = (post: BlogPost) => user ? post.likes.includes(user.id) : false;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       <main className="pt-20 md:pt-24">
         {/* Hero */}
         <section className="py-12 md:py-16 bg-gradient-to-b from-primary/5 to-background">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">School Blog</h1>
-            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
-              Insights, updates, and reflections from Daarul Hidayah
-            </p>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t.blog}</h1>
+            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">{t.blogSubtitle}</p>
           </div>
         </section>
 
@@ -57,7 +68,7 @@ const Blog: React.FC = () => {
             {selectedPost ? (
               <div className="max-w-3xl mx-auto">
                 <button onClick={() => setSelectedPost(null)} className="text-primary hover:underline mb-6 text-sm font-medium">
-                  ← Back to all posts
+                  {t.backToAllPosts}
                 </button>
                 <article className="bg-card rounded-2xl border border-border p-6 md:p-8">
                   <div className="flex flex-wrap gap-2 mb-4">
@@ -79,7 +90,7 @@ const Blog: React.FC = () => {
                     <button onClick={() => handleLike(selectedPost.id)}
                       className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${hasLiked(selectedPost) ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
                       <FiHeart className={`w-5 h-5 ${hasLiked(selectedPost) ? 'fill-current' : ''}`} />
-                      <span>{posts.find(p => p.id === selectedPost.id)?.likes.length || 0} likes</span>
+                      <span>{selectedPost.likes.length} {t.likes}</span>
                     </button>
                   </div>
                 </article>
@@ -87,7 +98,7 @@ const Blog: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {posts.map(post => (
-                  <article key={post.id} className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-medium transition-shadow">
+                  <article key={post.id} className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="p-6">
                       <div className="flex flex-wrap gap-2 mb-3">
                         {post.tags.slice(0, 2).map(tag => (
@@ -116,7 +127,7 @@ const Blog: React.FC = () => {
               </div>
             )}
             {posts.length === 0 && (
-              <div className="text-center py-12"><p className="text-muted-foreground">No blog posts yet.</p></div>
+              <div className="text-center py-12"><p className="text-muted-foreground">{t.noBlogPosts}</p></div>
             )}
           </div>
         </section>
