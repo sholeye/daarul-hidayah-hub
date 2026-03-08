@@ -7,6 +7,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { FiMoon, FiSun, FiMenu, FiX } from 'react-icons/fi';
 import { useTheme } from '@/features/app/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/features/auth/AuthContext';
 import { LanguageToggle } from '@/features/common/LanguageToggle';
 import { Button } from '@/components/ui/button';
 
