@@ -91,10 +91,10 @@ const Quiz: React.FC = () => {
         <section className="py-12 md:py-16 bg-gradient-to-r from-primary to-primary/80">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-xl md:text-2xl font-bold text-primary-foreground mb-3">
-              Ready to Compete?
+              {t.readyToCompete}
             </h2>
             <p className="text-primary-foreground/80 mb-6 max-w-lg mx-auto text-sm md:text-base">
-              If you're a representative, get your login code from your house captain and join the next competition!
+              {t.readyToCompeteDesc}
             </p>
             <Link 
               to="/#contact-cta"
