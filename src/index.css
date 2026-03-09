@@ -1,14 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;700&display=swap");
-
 /**
  * =============================================================================
  * DAARUL HIDAYAH DESIGN SYSTEM - PREMIUM EDITION
@@ -35,45 +24,45 @@
   :root {
     /* Typography - Bricolage Grotesque */
     --font-primary: 'Bricolage Grotesque', system-ui, sans-serif;
-
+    
     /* Core Colors - Deep Teal & Rich Gold Palette */
-    --background: 60 4% 95%;
-    --foreground: 24 9% 10%;
+    --background: 40 30% 98%;
+    --foreground: 170 30% 10%;
 
     /* Cards & Surfaces */
-    --card: 60 9% 97%;
-    --card-foreground: 24 9% 10%;
+    --card: 40 35% 99%;
+    --card-foreground: 170 30% 10%;
 
-    --popover: 20 5% 90%;
-    --popover-foreground: 24 9% 10%;
+    --popover: 40 35% 99%;
+    --popover-foreground: 170 30% 10%;
 
     /* Primary - Deep Teal */
-    --primary: 37 92% 50%;
-    --primary-foreground: 47 100% 96%;
+    --primary: 168 60% 25%;
+    --primary-foreground: 40 30% 98%;
 
     /* Secondary - Rich Gold */
-    --secondary: 24 5% 44%;
-    --secondary-foreground: 60 9% 97%;
+    --secondary: 38 85% 52%;
+    --secondary-foreground: 40 30% 98%;
 
     /* Accent - Warm Copper */
-    --accent: 47 100% 96%;
-    --accent-foreground: 37 92% 50%;
+    --accent: 25 70% 55%;
+    --accent-foreground: 40 30% 98%;
 
     /* Muted & Supporting */
-    --muted: 23 5% 82%;
-    --muted-foreground: 24 9% 10%;
+    --muted: 40 20% 93%;
+    --muted-foreground: 170 15% 40%;
 
     /* Destructive Actions */
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 40 30% 98%;
 
     /* Borders & Inputs */
-    --border: 23 5% 82%;
-    --input: 23 5% 82%;
-    --ring: 37 92% 50%;
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 168 60% 25%;
 
     /* Radius */
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     /* Premium Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(168 60% 25%) 0%, hsl(168 50% 35%) 100%);
@@ -92,68 +81,49 @@
     --shadow-strong: 0 16px 48px -16px hsl(170 30% 10% / 0.14);
     --shadow-glow: 0 0 48px -8px hsl(168 60% 25% / 0.25);
     --shadow-glow-secondary: 0 0 48px -8px hsl(38 85% 52% / 0.25);
-
+    
     /* Sidebar - Deep Elegant Theme */
     --sidebar-background: 170 35% 8%;
-    --sidebar-foreground: 24 9% 10%;
-    --sidebar-primary: 37 92% 50%;
-    --sidebar-primary-foreground: 47 100% 96%;
-    --sidebar-accent: 24 5% 44%;
-    --sidebar-accent-foreground: 60 9% 97%;
-    --sidebar-border: 23 5% 82%;
-    --sidebar-ring: 37 92% 50%;
-    --chart-1: 45 96% 64%;
-    --chart-2: 47 95% 53%;
-    --chart-3: 43 96% 56%;
-    --chart-4: 37 92% 50%;
-    --chart-5: 24 5% 44%;
-    --sidebar: 60 9% 97%;
-    --font-sans: 'Source Sans Pro', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    --font-serif: 'Source Serif Pro', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-    --font-mono: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-    --tracking-normal: 0em;
-    --spacing: 0.25rem;
+    --sidebar-foreground: 40 25% 92%;
+    --sidebar-primary: 38 85% 52%;
+    --sidebar-primary-foreground: 40 30% 98%;
+    --sidebar-accent: 170 30% 14%;
+    --sidebar-accent-foreground: 40 25% 92%;
+    --sidebar-border: 170 25% 16%;
+    --sidebar-ring: 38 85% 52%;
   }
 
   /* -------------------------------------------------------------------------
      DARK MODE DESIGN TOKENS
      ------------------------------------------------------------------------- */
   .dark {
-    --background: 24 9% 10%;
-    --foreground: 60 9% 97%;
+    --background: 170 30% 6%;
+    --foreground: 40 25% 92%;
 
-    --card: 12 6% 15%;
-    --card-foreground: 60 9% 97%;
+    --card: 170 28% 10%;
+    --card-foreground: 40 25% 92%;
 
-    --popover: 30 6% 25%;
-    --popover-foreground: 60 9% 97%;
+    --popover: 170 28% 10%;
+    --popover-foreground: 40 25% 92%;
 
-    --primary: 43 96% 56%;
-    --primary-foreground: 20 91% 14%;
+    --primary: 168 50% 40%;
+    --primary-foreground: 170 30% 6%;
 
-    --secondary: 24 5% 44%;
-    --secondary-foreground: 60 9% 97%;
+    --secondary: 38 80% 55%;
+    --secondary-foreground: 170 30% 6%;
 
-    --accent: 25 83% 14%;
-    --accent-foreground: 47 95% 53%;
+    --accent: 25 65% 50%;
+    --accent-foreground: 40 25% 92%;
 
-    --muted: 24 5% 44%;
-    --muted-foreground: 60 9% 97%;
+    --muted: 170 22% 14%;
+    --muted-foreground: 40 15% 55%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 85% 97%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 40 25% 92%;
 
-    --border: 33 5% 32%;
-    --input: 33 5% 32%;
-    --ring: 43 96% 56%;
+    --border: 170 22% 16%;
+    --input: 170 22% 16%;
+    --ring: 168 50% 40%;
 
     --gradient-primary: linear-gradient(135deg, hsl(168 45% 35%) 0%, hsl(168 40% 45%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(38 80% 50%) 0%, hsl(45 85% 55%) 100%);
@@ -170,30 +140,15 @@
     --shadow-strong: 0 16px 48px -16px hsl(0 0% 0% / 0.5);
     --shadow-glow: 0 0 48px -8px hsl(168 50% 40% / 0.3);
     --shadow-glow-secondary: 0 0 48px -8px hsl(38 80% 55% / 0.3);
-
+    
     --sidebar-background: 170 32% 5%;
-    --sidebar-foreground: 60 9% 97%;
-    --sidebar-primary: 43 96% 56%;
-    --sidebar-primary-foreground: 20 91% 14%;
-    --sidebar-accent: 47 95% 53%;
-    --sidebar-accent-foreground: 25 83% 14%;
-    --sidebar-border: 33 5% 32%;
-    --sidebar-ring: 43 96% 56%;
-    --chart-1: 45 96% 64%;
-    --chart-2: 48 96% 76%;
-    --chart-3: 43 96% 56%;
-    --chart-4: 37 92% 50%;
-    --chart-5: 33 5% 32%;
-    --sidebar: 12 6% 15%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-    --radius: 0rem;
+    --sidebar-foreground: 40 25% 92%;
+    --sidebar-primary: 38 80% 55%;
+    --sidebar-primary-foreground: 170 30% 6%;
+    --sidebar-accent: 170 28% 11%;
+    --sidebar-accent-foreground: 40 25% 92%;
+    --sidebar-border: 170 22% 12%;
+    --sidebar-ring: 38 80% 55%;
   }
 }
 
