@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   // Helper to fetch user with role
-  const fetchUserWithRole = async (sessionUser: any) => {
+  const fetchUserWithRole = useCallback(async (sessionUser: any) => {
     const { data: roleRows, error } = await supabase
       .from('user_roles')
       .select('role')
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       role,
     });
     setIsLoading(false);
-  };
+  }, []);
 
   // Listen for auth state changes — no await in the callback to prevent deadlocks
   useEffect(() => {
