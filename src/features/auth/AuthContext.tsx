@@ -76,6 +76,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => subscription.unsubscribe();
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error) {
+      console.error('Failed to refresh user:', error.message);
+      return;
+    }
+
+    if (data.user) {
+      await fetchUserWithRole(data.user);
+    } else {
+      setUser(null);
+    }
+  }, [fetchUserWithRole]);
+
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
