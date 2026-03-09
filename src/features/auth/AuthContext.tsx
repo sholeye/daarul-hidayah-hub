@@ -220,7 +220,13 @@ export const useRequireRole = (allowedRoles: UserRole[]): { hasAccess: boolean; 
   return { hasAccess: user ? allowedRoles.includes(user.role) : false, role: user?.role || null };
 };
 
-export const generateStudentCredentials = (fullName: string, studentId: string) => {
-  const username = fullName.toLowerCase().replace(/\s+/g, '.') + '@dh.edu';
+export const generateStudentCredentials = (_fullName: string, studentId: string) => {
+  // Use studentId to guarantee uniqueness; name-based emails collide easily.
+  const localPart = studentId
+    .toLowerCase()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9._-]/g, '');
+
+  const username = `${localPart}@dh.edu`;
   return { username, password: studentId };
 };

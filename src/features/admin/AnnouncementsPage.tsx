@@ -51,7 +51,7 @@ const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ title, content, category, isActive: true, createdBy: 'Admin' });
+    onSubmit({ title, content, category, isActive: true });
     setTitle('');
     setContent('');
     setCategory('general');
