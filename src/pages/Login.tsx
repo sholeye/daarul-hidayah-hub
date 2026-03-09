@@ -35,7 +35,10 @@ const Login: React.FC = () => {
 
   const canAccessPath = (role: UserRole, path?: string) => {
     if (!path) return false;
-    if (path.startsWith('/admin')) return role === 'admin';
+    // Admin is a superuser in this app
+    if (role === 'admin') return true;
+
+    if (path.startsWith('/admin')) return false;
     if (path.startsWith('/instructor')) return role === 'instructor';
     if (path.startsWith('/learner')) return role === 'learner';
     if (path.startsWith('/parent')) return role === 'parent';
