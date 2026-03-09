@@ -251,9 +251,9 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         <div className="mt-6 pt-6 border-t border-border">
-          <Button onClick={handleSaveUser}>
+          <Button onClick={handleSaveUser} disabled={isSavingUser}>
             <FiSave className="w-4 h-4 mr-2" />
-            Save Profile
+            {isSavingUser ? 'Saving...' : 'Save Profile'}
           </Button>
         </div>
       </div>
