@@ -14,6 +14,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  refreshUser: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   signup: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
@@ -29,7 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   // Helper to fetch user with role
-  const fetchUserWithRole = async (sessionUser: any) => {
+  const fetchUserWithRole = useCallback(async (sessionUser: any) => {
     const { data: roleRows, error } = await supabase
       .from('user_roles')
       .select('role')
@@ -49,7 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       role,
     });
     setIsLoading(false);
-  };
+  }, []);
 
   // Listen for auth state changes — no await in the callback to prevent deadlocks
   useEffect(() => {
@@ -74,6 +75,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const refreshUser = useCallback(async () => {
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error) {
+      console.error('Failed to refresh user:', error.message);
+      return;
+    }
+
+    if (data.user) {
+      await fetchUserWithRole(data.user);
+    } else {
+      setUser(null);
+    }
+  }, [fetchUserWithRole]);
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -200,9 +216,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <AuthContext.Provider value={{
-      user, isAuthenticated: !!user, isLoading,
-      login, signup, logout, createStudentAccount,
-      getStudentByUserId, requestPasswordReset,
+      user,
+      isAuthenticated: !!user,
+      isLoading,
+      refreshUser,
+      login,
+      signup,
+      logout,
+      createStudentAccount,
+      getStudentByUserId,
+      requestPasswordReset,
     }}>
       {children}
     </AuthContext.Provider>
