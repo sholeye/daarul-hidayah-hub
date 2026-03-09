@@ -108,20 +108,19 @@ export const AnnouncementsPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | undefined>();
 
-  const handleSubmit = (data: Partial<Announcement>) => {
-    if (editingAnnouncement) {
-      updateAnnouncement(editingAnnouncement.id, data);
-      toast.success('Announcement updated!');
-    } else {
-      const newAnnouncement: Announcement = {
-        ...data as Announcement,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      addAnnouncement(newAnnouncement);
-      toast.success('Announcement published!');
+  const handleSubmit = async (data: Partial<Announcement>) => {
+    try {
+      if (editingAnnouncement) {
+        await updateAnnouncement(editingAnnouncement.id, data);
+        toast.success('Announcement updated!');
+      } else {
+        await addAnnouncement(data);
+        toast.success('Announcement published!');
+      }
+      setEditingAnnouncement(undefined);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to save announcement');
     }
-    setEditingAnnouncement(undefined);
   };
 
   const handleDelete = (id: string) => {
