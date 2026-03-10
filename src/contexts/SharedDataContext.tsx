@@ -1,52 +1,45 @@
 /**
  * SharedDataContext - Real Supabase data store
- * All CRUD operations hit the database directly.
+ * Refetches on auth changes to prevent stale state.
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useRef } from 'react';
 import { BlogPost, Announcement, Student, Payment, AttendanceRecord, StudentResult, SchoolClass } from '@/types';
 import * as db from '@/services/supabaseService';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface SharedDataContextType {
-  // Loading
   isLoading: boolean;
   refreshAll: () => Promise<void>;
 
-  // Blog
   blogPosts: BlogPost[];
   addBlogPost: (post: Partial<BlogPost>, authorId: string) => Promise<void>;
   updateBlogPost: (id: string, data: Partial<BlogPost>) => Promise<void>;
   deleteBlogPost: (id: string) => Promise<void>;
   toggleBlogLike: (postId: string, userId: string) => Promise<void>;
 
-  // Announcements
   announcements: Announcement[];
   addAnnouncement: (ann: Partial<Announcement>) => Promise<void>;
   updateAnnouncement: (id: string, data: Partial<Announcement>) => Promise<void>;
   deleteAnnouncement: (id: string) => Promise<void>;
   toggleAnnouncementActive: (id: string) => Promise<void>;
 
-  // Students
   students: Student[];
   addStudent: (student: Partial<Student>, authUserId?: string) => Promise<Student>;
   updateStudent: (id: string, data: Partial<Student>) => Promise<void>;
   deleteStudent: (id: string) => Promise<void>;
 
-  // Payments
   payments: Payment[];
   addPayment: (payment: Partial<Payment>) => Promise<void>;
 
-  // Attendance
   attendance: AttendanceRecord[];
   setAttendanceRecord: (record: AttendanceRecord) => Promise<void>;
   bulkSetAttendance: (records: AttendanceRecord[]) => Promise<void>;
 
-  // Results
   results: StudentResult[];
   addOrUpdateResult: (result: StudentResult) => Promise<void>;
 
-  // Classes
   schoolClasses: SchoolClass[];
 }
 
@@ -61,8 +54,10 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [results, setResults] = useState<StudentResult[]>([]);
   const [schoolClasses, setSchoolClasses] = useState<SchoolClass[]>([]);
+  const fetchIdRef = useRef(0);
 
   const refreshAll = useCallback(async () => {
+    const id = ++fetchIdRef.current;
     setIsLoading(true);
     try {
       const [s, r, att, pay, ann, bp, cls] = await Promise.all([
@@ -74,17 +69,32 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
         db.fetchBlogPosts().catch(() => []),
         db.fetchSchoolClasses().catch(() => []),
       ]);
-      setStudents(s); setResults(r); setAttendance(att);
-      setPayments(pay); setAnnouncements(ann); setBlogPosts(bp);
-      setSchoolClasses(cls);
+      // Only apply if this is still the latest fetch
+      if (id === fetchIdRef.current) {
+        setStudents(s); setResults(r); setAttendance(att);
+        setPayments(pay); setAnnouncements(ann); setBlogPosts(bp);
+        setSchoolClasses(cls);
+      }
     } catch (err) {
       console.error('Failed to fetch data:', err);
     } finally {
-      setIsLoading(false);
+      if (id === fetchIdRef.current) setIsLoading(false);
     }
   }, []);
 
+  // Initial load
   useEffect(() => { refreshAll(); }, [refreshAll]);
+
+  // Re-fetch whenever auth state changes (login/logout/user switch)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        // Small delay to let the session settle
+        setTimeout(() => refreshAll(), 100);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [refreshAll]);
 
   // Blog
   const addBlogPost = useCallback(async (post: Partial<BlogPost>, authorId: string) => {
@@ -154,7 +164,6 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
   const addPayment = useCallback(async (payment: Partial<Payment>) => {
     const newPayment = await db.createPayment(payment);
     setPayments(prev => [newPayment, ...prev]);
-    // Refresh students to get updated fee status
     const freshStudents = await db.fetchStudents();
     setStudents(freshStudents);
   }, []);
@@ -171,7 +180,15 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const bulkSetAttendance = useCallback(async (records: AttendanceRecord[]) => {
     await db.bulkUpsertAttendance(records);
-    setAttendance(prev => [...prev, ...records]);
+    setAttendance(prev => {
+      const updated = [...prev];
+      records.forEach(record => {
+        const idx = updated.findIndex(a => a.studentId === record.studentId && a.date === record.date);
+        if (idx >= 0) updated[idx] = record;
+        else updated.push(record);
+      });
+      return updated;
+    });
   }, []);
 
   // Results

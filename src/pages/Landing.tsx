@@ -1,5 +1,5 @@
 /**
- * Landing Page - Premium redesigned public-facing page for Daarul Hidayah
+ * Landing Page - with announcement popup
  */
 
 import React from 'react';
@@ -13,6 +13,7 @@ import { QuizHighlightSection } from '@/features/common/QuizHighlightSection';
 import { AnnouncementsSection } from '@/features/common/AnnouncementsSection';
 import { ContactCTASection } from '@/features/common/ContactCTASection';
 import { GalleryPreview } from '@/features/common/GalleryPreview';
+import { AnnouncementPopup } from '@/components/AnnouncementPopup';
 
 const Landing: React.FC = () => {
   return (
@@ -29,6 +30,7 @@ const Landing: React.FC = () => {
         <ContactCTASection />
       </main>
       <Footer />
+      <AnnouncementPopup />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 /**
- * Learner Dashboard - Shared state
+ * Learner Dashboard - Uses real shared data, finds student by email match
  */
 
 import React from 'react';
@@ -10,15 +10,17 @@ import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatCurrency } from '@/utils/helpers';
+import { InlineLoader } from '@/components/ui/page-loader';
 
 export const LearnerDashboard: React.FC = () => {
-  const { getStudentByUserId } = useAuth();
-  const { students, results, attendance, announcements } = useSharedData();
-  const student = getStudentByUserId();
-  const currentStudent = student || students[0];
-  const studentResult = results.find(r => r.studentId === currentStudent?.studentId);
+  const { user } = useAuth();
+  const { students, results, attendance, announcements, isLoading } = useSharedData();
 
-  const studentAttendance = attendance.filter(a => a.studentId === currentStudent?.studentId);
+  // Find the student record matching the logged-in user by email
+  const currentStudent = students.find(s => s.email === user?.email);
+  const studentResult = currentStudent ? results.find(r => r.studentId === currentStudent.studentId) : null;
+
+  const studentAttendance = currentStudent ? attendance.filter(a => a.studentId === currentStudent.studentId) : [];
   const presentDays = studentAttendance.filter(a => a.status === 'present').length;
   const lateDays = studentAttendance.filter(a => a.status === 'late').length;
   const absentDays = studentAttendance.filter(a => a.status === 'absent').length;
@@ -29,22 +31,39 @@ export const LearnerDashboard: React.FC = () => {
   const feesPaid = currentStudent?.feeStatus === 'paid';
   const feeBalance = currentStudent ? currentStudent.totalFee - currentStudent.amountPaid : 0;
 
+  if (isLoading) return <InlineLoader />;
+
+  if (!currentStudent) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-6 text-primary-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold">Assalamu Alaikum, {user?.name?.split(' ')[0] || 'Student'}</h1>
+          <p className="mt-2 opacity-90">Welcome to your student portal.</p>
+        </div>
+        <div className="bg-card rounded-2xl border border-border p-12 text-center">
+          <FiUser className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">No student record found for your account. Please contact the administrator.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-6 text-primary-foreground">
-        <h1 className="text-2xl sm:text-3xl font-bold">Assalamu Alaikum, {currentStudent?.fullName?.split(' ')[0]}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Assalamu Alaikum, {currentStudent.fullName.split(' ')[0]}</h1>
         <p className="mt-2 opacity-90">Welcome to your student portal. Here&apos;s your overview.</p>
         <div className="mt-4 flex flex-wrap gap-4">
-          <div className="bg-primary-foreground/20 rounded-lg px-4 py-2"><span className="text-sm opacity-75">Student ID</span><p className="font-semibold">{currentStudent?.studentId}</p></div>
-          <div className="bg-primary-foreground/20 rounded-lg px-4 py-2"><span className="text-sm opacity-75">Class</span><p className="font-semibold">{currentStudent?.class}</p></div>
+          <div className="bg-primary-foreground/20 rounded-lg px-4 py-2"><span className="text-sm opacity-75">Student ID</span><p className="font-semibold">{currentStudent.studentId}</p></div>
+          <div className="bg-primary-foreground/20 rounded-lg px-4 py-2"><span className="text-sm opacity-75">Class</span><p className="font-semibold">{currentStudent.class}</p></div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl border border-border p-4"><div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><FiCalendar className="w-5 h-5 text-primary" /></div><span className="text-sm text-muted-foreground">Attendance</span></div><p className="text-2xl font-bold text-foreground">{attendancePercentage}%</p><div className="flex gap-2 mt-2 text-xs"><span className="text-primary">{presentDays} present</span><span className="text-secondary">{lateDays} late</span></div></div>
         <div className="bg-card rounded-xl border border-border p-4"><div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center"><FiFileText className="w-5 h-5 text-secondary" /></div><span className="text-sm text-muted-foreground">Average</span></div><p className="text-2xl font-bold text-foreground">{studentResult ? `${studentResult.averageScore.toFixed(1)}%` : 'N/A'}</p><p className="text-xs text-muted-foreground mt-2">{studentResult ? `Position: ${studentResult.position}` : 'No result yet'}</p></div>
-        <div className="bg-card rounded-xl border border-border p-4"><div className="flex items-center gap-3 mb-3"><div className={`w-10 h-10 rounded-lg flex items-center justify-center ${feesPaid ? 'bg-primary/10' : 'bg-destructive/10'}`}><FiDollarSign className={`w-5 h-5 ${feesPaid ? 'text-primary' : 'text-destructive'}`} /></div><span className="text-sm text-muted-foreground">Fee Status</span></div><Badge variant={currentStudent?.feeStatus === 'paid' ? 'paid' : 'unpaid'}>{currentStudent?.feeStatus}</Badge><p className="text-xs text-muted-foreground mt-2">{feeBalance > 0 ? `Balance: ${formatCurrency(feeBalance)}` : 'Fully paid'}</p></div>
-        <div className="bg-card rounded-xl border border-border p-4"><div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center"><FiUser className="w-5 h-5 text-accent-foreground" /></div><span className="text-sm text-muted-foreground">Profile</span></div><p className="text-sm font-medium text-foreground truncate">{currentStudent?.fullName}</p><p className="text-xs text-muted-foreground mt-2">{currentStudent?.email}</p></div>
+        <div className="bg-card rounded-xl border border-border p-4"><div className="flex items-center gap-3 mb-3"><div className={`w-10 h-10 rounded-lg flex items-center justify-center ${feesPaid ? 'bg-primary/10' : 'bg-destructive/10'}`}><FiDollarSign className={`w-5 h-5 ${feesPaid ? 'text-primary' : 'text-destructive'}`} /></div><span className="text-sm text-muted-foreground">Fee Status</span></div><Badge variant={currentStudent.feeStatus === 'paid' ? 'paid' : 'unpaid'}>{currentStudent.feeStatus}</Badge><p className="text-xs text-muted-foreground mt-2">{feeBalance > 0 ? `Balance: ${formatCurrency(feeBalance)}` : 'Fully paid'}</p></div>
+        <div className="bg-card rounded-xl border border-border p-4"><div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center"><FiUser className="w-5 h-5 text-accent-foreground" /></div><span className="text-sm text-muted-foreground">Profile</span></div><p className="text-sm font-medium text-foreground truncate">{currentStudent.fullName}</p><p className="text-xs text-muted-foreground mt-2">{currentStudent.email}</p></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -59,7 +78,7 @@ export const LearnerDashboard: React.FC = () => {
         <div className="bg-card rounded-2xl border border-border p-6">
           <h2 className="font-semibold text-foreground mb-4">Recent Announcements</h2>
           {activeAnnouncements.length > 0 ? <div className="space-y-3">{activeAnnouncements.map(ann => (
-            <div key={ann.id} className="p-3 rounded-lg bg-muted/50 border border-border"><div className="flex items-start justify-between gap-2"><h3 className="font-medium text-foreground text-sm">{ann.title}</h3><Badge variant={ann.category === 'urgent' ? 'absent' : ann.category === 'academic' ? 'paid' : 'default'}>{ann.category}</Badge></div><p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ann.content}</p><p className="text-xs text-muted-foreground mt-2">{formatDate(ann.createdAt)}</p></div>
+            <div key={ann.id} className="p-3 rounded-lg bg-muted/50 border border-border"><div className="flex items-start justify-between gap-2"><h3 className="font-medium text-foreground text-sm">{ann.title}</h3><Badge variant={ann.category === 'urgent' ? 'destructive' : ann.category === 'academic' ? 'paid' : 'default'}>{ann.category}</Badge></div><p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ann.content}</p><p className="text-xs text-muted-foreground mt-2">{formatDate(ann.createdAt)}</p></div>
           ))}</div> : <div className="bg-muted/50 rounded-lg p-6 text-center"><p className="text-muted-foreground">No announcements</p></div>}
         </div>
       </div>

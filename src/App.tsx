@@ -51,6 +51,7 @@ import { LearnerFees } from "@/features/learner/LearnerFees";
 import { InstructorLayout } from "@/features/instructor/InstructorLayout";
 import { InstructorDashboard } from "@/features/instructor/InstructorDashboard";
 import { InstructorClasses } from "@/features/instructor/InstructorClasses";
+import { InstructorStudents } from "@/features/instructor/InstructorStudents";
 import { InstructorAttendance } from "@/features/instructor/InstructorAttendance";
 import { InstructorResults } from "@/features/instructor/InstructorResults";
 
@@ -114,6 +115,7 @@ const App = () => (
               }>
                 <Route index element={<InstructorDashboard />} />
                 <Route path="classes" element={<InstructorClasses />} />
+                <Route path="students" element={<InstructorStudents />} />
                 <Route path="attendance" element={<InstructorAttendance />} />
                 <Route path="results" element={<InstructorResults />} />
               </Route>

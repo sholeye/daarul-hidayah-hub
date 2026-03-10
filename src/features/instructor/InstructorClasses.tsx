@@ -1,16 +1,18 @@
 /**
- * Instructor Classes Page - Shared state
+ * Instructor Classes Page - Uses shared data instead of mock
  */
 
 import React from 'react';
 import { FiUsers, FiBook } from 'react-icons/fi';
-import { schoolClasses } from '@/data/mockData';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
+import { InlineLoader } from '@/components/ui/page-loader';
 
 export const InstructorClasses: React.FC = () => {
-  const { students } = useSharedData();
+  const { students, schoolClasses, isLoading } = useSharedData();
   const assignedClasses = schoolClasses.slice(0, 2);
+
+  if (isLoading) return <InlineLoader />;
 
   return (
     <div className="space-y-6">
@@ -33,10 +35,17 @@ export const InstructorClasses: React.FC = () => {
                     <div className="flex-1 min-w-0"><p className="font-medium text-foreground text-sm truncate">{student.fullName}</p><p className="text-xs text-muted-foreground">{student.studentId}</p></div>
                   </div>
                 ))}
+                {classStudents.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No students in this class</p>}
               </div>
             </div>
           );
         })}
+        {assignedClasses.length === 0 && (
+          <div className="col-span-2 text-center py-12 bg-card rounded-2xl border border-border">
+            <FiUsers className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No classes assigned yet</p>
+          </div>
+        )}
       </div>
     </div>
   );
