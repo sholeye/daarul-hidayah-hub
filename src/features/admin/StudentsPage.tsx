@@ -1,5 +1,5 @@
 /**
- * Students Management Page - Real Supabase CRUD
+ * Students Management Page - Real Supabase CRUD with UI confirm dialogs
  */
 
 import React, { useState } from 'react';
@@ -13,9 +13,11 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import { generateStudentId, formatCurrency, formatDate } from '@/utils/helpers';
 import { generateStudentCredentials } from '@/features/auth/AuthContext';
+import { InlineLoader } from '@/components/ui/page-loader';
 import QRCode from 'qrcode';
 
 // Registration Modal
@@ -52,7 +54,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, 
 
   return (
     <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">Register New Student</h2>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors"><FiX className="w-5 h-5" /></button>
@@ -100,7 +102,7 @@ const EditModal: React.FC<EditModalProps> = ({ student, onClose, onSave, schoolC
 
   return (
     <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">Edit Student</h2>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors"><FiX className="w-5 h-5" /></button>
@@ -140,7 +142,7 @@ const StudentDetailModal: React.FC<{ student: Student | null; onClose: () => voi
 
   return (
     <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="p-6 border-b border-border flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">Student Details</h2>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors"><FiX className="w-5 h-5" /></button>
@@ -187,7 +189,7 @@ const CredentialsModal: React.FC<{ isOpen: boolean; onClose: () => void; credent
 
   return (
     <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-md">
+      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-md animate-scale-in">
         <div className="p-6 border-b border-border"><h2 className="text-xl font-bold text-foreground">Student Registered!</h2><p className="text-muted-foreground text-sm mt-1">Login credentials for {studentName}</p></div>
         <div className="p-6 space-y-4">
           <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
@@ -195,7 +197,7 @@ const CredentialsModal: React.FC<{ isOpen: boolean; onClose: () => void; credent
               <button onClick={copyCredentials} className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg flex items-center gap-2">{copied ? <FiCheck className="w-4 h-4" /> : <FiCopy className="w-4 h-4" />}{copied ? 'Copied!' : 'Copy'}</button></div>
             <div className="space-y-2 font-mono text-sm"><p className="flex items-center gap-2"><span className="text-muted-foreground w-20">Username:</span><span className="text-foreground break-all">{credentials.username}</span></p><p className="flex items-center gap-2"><span className="text-muted-foreground w-20">Password:</span><span className="text-foreground">{credentials.password}</span></p></div>
           </div>
-          <p className="text-sm text-muted-foreground">Share these credentials with the student. The password is the student ID.</p>
+          <p className="text-sm text-muted-foreground">Share these credentials with the student. Keep the password safe.</p>
           <Button onClick={onClose} className="w-full">Done</Button>
         </div>
       </div>
@@ -205,7 +207,7 @@ const CredentialsModal: React.FC<{ isOpen: boolean; onClose: () => void; credent
 
 // Main Students Page
 export const StudentsPage: React.FC = () => {
-  const { students, addStudent, updateStudent, deleteStudent, schoolClasses } = useSharedData();
+  const { students, addStudent, updateStudent, deleteStudent, schoolClasses, isLoading } = useSharedData();
   const { createStudentAccount } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showRegistration, setShowRegistration] = useState(false);
@@ -214,6 +216,7 @@ export const StudentsPage: React.FC = () => {
   const [filterClass, setFilterClass] = useState('all');
   const [newCredentials, setNewCredentials] = useState<{ username: string; password: string } | null>(null);
   const [newStudentName, setNewStudentName] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<Student | null>(null);
 
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || s.studentId.toLowerCase().includes(searchQuery.toLowerCase());
@@ -227,7 +230,6 @@ export const StudentsPage: React.FC = () => {
       if (!authResult.success || !authResult.userId) {
         throw new Error(authResult.message || 'Failed to create student login account');
       }
-
       await addStudent(studentData, authResult.userId);
       setShowRegistration(false);
       setNewCredentials(credentials);
@@ -245,15 +247,16 @@ export const StudentsPage: React.FC = () => {
     } catch { toast.error('Failed to update student'); }
   };
 
-  const handleDelete = async (studentId: string) => {
-    const student = students.find(s => s.id === studentId);
-    if (confirm(`Delete ${student?.fullName}? This cannot be undone.`)) {
-      try {
-        await deleteStudent(studentId);
-        toast.success('Student deleted!');
-      } catch { toast.error('Failed to delete student'); }
-    }
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await deleteStudent(deleteConfirm.id);
+      toast.success('Student deleted!');
+    } catch { toast.error('Failed to delete student'); }
+    setDeleteConfirm(null);
   };
+
+  if (isLoading) return <InlineLoader />;
 
   return (
     <div className="space-y-6">
@@ -290,7 +293,7 @@ export const StudentsPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button onClick={() => setSelectedStudent(student)} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="View"><FiEye className="w-4 h-4" /></button>
                       <button onClick={() => setEditingStudent(student)} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit"><FiEdit2 className="w-4 h-4" /></button>
-                      <button onClick={() => handleDelete(student.id)} className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Delete"><FiTrash2 className="w-4 h-4" /></button>
+                      <button onClick={() => setDeleteConfirm(student)} className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Delete"><FiTrash2 className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>
@@ -305,6 +308,16 @@ export const StudentsPage: React.FC = () => {
       <StudentDetailModal student={selectedStudent} onClose={() => setSelectedStudent(null)} />
       <EditModal student={editingStudent} onClose={() => setEditingStudent(null)} onSave={handleSaveEdit} schoolClasses={schoolClasses} />
       <CredentialsModal isOpen={!!newCredentials} onClose={() => { setNewCredentials(null); setNewStudentName(''); }} credentials={newCredentials} studentName={newStudentName} />
+      
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}
+        title="Delete Student"
+        description={`Are you sure you want to delete ${deleteConfirm?.fullName}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        variant="destructive"
+      />
     </div>
   );
 };

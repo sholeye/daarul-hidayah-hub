@@ -1,31 +1,32 @@
 /**
- * =============================================================================
- * INSTRUCTOR LAYOUT - with i18n support
- * =============================================================================
+ * Instructor Layout - with logout confirmation and students nav
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { FiHome, FiUsers, FiCalendar, FiFileText, FiLogOut, FiMoon, FiSun, FiMenu, FiX } from 'react-icons/fi';
+import { FiHome, FiUsers, FiCalendar, FiFileText, FiLogOut, FiMoon, FiSun, FiMenu, FiX, FiEye } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/features/app/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 export const InstructorLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
 
   const navItems = [
     { icon: FiHome, label: t.dashboard, path: '/instructor' },
     { icon: FiUsers, label: t.myClasses, path: '/instructor/classes' },
+    { icon: FiEye, label: t.students || 'Students', path: '/instructor/students' },
     { icon: FiCalendar, label: t.attendance, path: '/instructor/attendance' },
     { icon: FiFileText, label: t.results, path: '/instructor/results' },
   ];
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = async () => { await logout(); navigate('/login'); };
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="min-h-screen bg-background">
@@ -53,10 +54,12 @@ export const InstructorLayout: React.FC = () => {
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center"><span className="text-primary-foreground font-bold">{user?.name?.[0] || 'I'}</span></div>
             <div className="flex-1 min-w-0"><p className="font-medium text-foreground truncate">{user?.name || 'Instructor'}</p><p className="text-xs text-muted-foreground truncate">{user?.email}</p></div>
           </div>
-          <button onClick={handleLogout} className="w-full p-2 rounded-lg hover:bg-destructive/10 text-destructive flex items-center justify-center gap-2"><FiLogOut className="w-5 h-5" /><span>{t.logout}</span></button>
+          <button onClick={() => setShowLogout(true)} className="w-full p-2 rounded-lg hover:bg-destructive/10 text-destructive flex items-center justify-center gap-2"><FiLogOut className="w-5 h-5" /><span>{t.logout}</span></button>
         </div>
       </aside>
       <main className={`${isRTL ? 'lg:mr-64' : 'lg:ml-64'} pt-16 lg:pt-0 min-h-screen`}><div className="p-6 lg:p-8"><Outlet /></div></main>
+
+      <ConfirmDialog open={showLogout} onOpenChange={setShowLogout} title="Sign Out" description="Are you sure you want to sign out?" confirmLabel="Sign Out" onConfirm={handleLogout} />
     </div>
   );
 };
