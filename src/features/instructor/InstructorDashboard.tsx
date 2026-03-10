@@ -1,19 +1,26 @@
 /**
- * =============================================================================
- * INSTRUCTOR DASHBOARD
- * =============================================================================
+ * Instructor Dashboard - Uses real shared data
  */
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiUsers, FiCalendar, FiFileText, FiArrowRight } from 'react-icons/fi';
+import { FiUsers, FiCalendar, FiFileText, FiArrowRight, FiEye } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
-import { mockStudents, schoolClasses } from '@/data/mockData';
+import { useSharedData } from '@/contexts/SharedDataContext';
+import { InlineLoader } from '@/components/ui/page-loader';
 
 export const InstructorDashboard: React.FC = () => {
   const { user } = useAuth();
-  const assignedClasses = schoolClasses.slice(0, 2); // Mock assigned classes
-  const totalStudents = mockStudents.filter(s => assignedClasses.some(c => c.name === s.class)).length;
+  const { students, schoolClasses, results, isLoading } = useSharedData();
+
+  const assignedClasses = schoolClasses.slice(0, 2);
+  const totalStudents = students.filter(s => assignedClasses.some(c => c.name === s.class)).length;
+  const pendingResults = students.filter(s =>
+    assignedClasses.some(c => c.name === s.class) &&
+    !results.some(r => r.studentId === s.studentId)
+  ).length;
+
+  if (isLoading) return <InlineLoader />;
 
   return (
     <div className="space-y-6">
@@ -33,11 +40,11 @@ export const InstructorDashboard: React.FC = () => {
         </div>
         <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center"><FiFileText className="w-6 h-6 text-accent-foreground" /></div>
-          <div><p className="text-2xl font-bold text-foreground">0</p><p className="text-sm text-muted-foreground">Pending Results</p></div>
+          <div><p className="text-2xl font-bold text-foreground">{pendingResults}</p><p className="text-sm text-muted-foreground">Pending Results</p></div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Link to="/instructor/attendance" className="bg-card rounded-2xl border border-border p-6 hover:shadow-soft transition-shadow">
           <div className="flex items-center justify-between"><h3 className="font-semibold text-foreground">Mark Attendance</h3><FiArrowRight className="w-5 h-5 text-muted-foreground" /></div>
           <p className="text-sm text-muted-foreground mt-2">Mark attendance for your assigned classes</p>
@@ -46,17 +53,27 @@ export const InstructorDashboard: React.FC = () => {
           <div className="flex items-center justify-between"><h3 className="font-semibold text-foreground">Enter Results</h3><FiArrowRight className="w-5 h-5 text-muted-foreground" /></div>
           <p className="text-sm text-muted-foreground mt-2">Enter scores for students in your classes</p>
         </Link>
+        <Link to="/instructor/students" className="bg-card rounded-2xl border border-border p-6 hover:shadow-soft transition-shadow">
+          <div className="flex items-center justify-between"><h3 className="font-semibold text-foreground">View Students</h3><FiArrowRight className="w-5 h-5 text-muted-foreground" /></div>
+          <p className="text-sm text-muted-foreground mt-2">View student details and information</p>
+        </Link>
       </div>
 
       <div className="bg-card rounded-2xl border border-border p-6">
         <h3 className="font-semibold text-foreground mb-4">My Classes</h3>
         <div className="space-y-3">
-          {assignedClasses.map(c => (
-            <div key={c.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-              <div><p className="font-medium text-foreground">{c.name}</p><p className="text-sm text-muted-foreground">{c.nameArabic}</p></div>
-              <span className="text-sm text-muted-foreground">{c.studentCount} students</span>
-            </div>
-          ))}
+          {assignedClasses.map(c => {
+            const classStudentCount = students.filter(s => s.class === c.name).length;
+            return (
+              <div key={c.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                <div><p className="font-medium text-foreground">{c.name}</p><p className="text-sm text-muted-foreground">{c.nameArabic}</p></div>
+                <span className="text-sm text-muted-foreground">{classStudentCount} students</span>
+              </div>
+            );
+          })}
+          {assignedClasses.length === 0 && (
+            <p className="text-muted-foreground text-center py-4">No classes assigned yet</p>
+          )}
         </div>
       </div>
     </div>

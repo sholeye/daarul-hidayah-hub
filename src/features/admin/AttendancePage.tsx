@@ -1,10 +1,9 @@
 /**
- * Attendance Management Page - Shared state
+ * Attendance Management Page - Uses shared data for classes
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { FiCheckCircle, FiXCircle, FiCalendar, FiSearch, FiUser, FiCheck } from 'react-icons/fi';
-import { schoolClasses } from '@/data/mockData';
 import { AttendanceRecord } from '@/types';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Button } from '@/components/ui/button';
@@ -12,10 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { InlineLoader } from '@/components/ui/page-loader';
 
 export const AttendancePage: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
-  const { students, attendance, setAttendanceRecord, bulkSetAttendance } = useSharedData();
+  const { students, attendance, setAttendanceRecord, bulkSetAttendance, schoolClasses, isLoading } = useSharedData();
   const [selectedDate, setSelectedDate] = useState(today);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('all');
@@ -60,6 +60,8 @@ export const AttendancePage: React.FC = () => {
     if (newRecords.length > 0) { bulkSetAttendance(newRecords); toast.success(`Marked ${newRecords.length} students as present`); }
     else toast.info('All students already have attendance marked');
   }, [filteredStudents, getStudentStatus, selectedDate, isFutureDate, bulkSetAttendance]);
+
+  if (isLoading) return <InlineLoader />;
 
   return (
     <div className="space-y-6">

@@ -10,39 +10,32 @@ import { Student, StudentResult, Announcement, Payment, AttendanceRecord, BlogPo
 // =============================================================================
 
 export const fetchStudents = async (): Promise<Student[]> => {
-  const { data, error } = await supabase
-    .from('students')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('students').select('*').order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []).map(mapStudentFromDB);
 };
 
 export const createStudent = async (student: Partial<Student>, authUserId?: string): Promise<Student> => {
-  const { data, error } = await supabase
-    .from('students')
-    .insert({
-      auth_user_id: authUserId || null,
-      student_id: student.studentId,
-      full_name: student.fullName,
-      email: student.email,
-      date_of_birth: student.dateOfBirth,
-      address: student.address,
-      phone: student.phone,
-      origin: student.origin,
-      sex: student.sex,
-      guardian_name: student.guardian?.name,
-      guardian_phone: student.guardian?.phone,
-      guardian_occupation: student.guardian?.occupation,
-      guardian_state: student.guardian?.stateOfOrigin,
-      class: student.class,
-      enrollment_date: student.enrollmentDate,
-      fee_status: student.feeStatus || 'unpaid',
-      amount_paid: student.amountPaid || 0,
-      total_fee: student.totalFee || 6000,
-    })
-    .select()
-    .single();
+  const { data, error } = await supabase.from('students').insert({
+    auth_user_id: authUserId || null,
+    student_id: student.studentId,
+    full_name: student.fullName,
+    email: student.email,
+    date_of_birth: student.dateOfBirth,
+    address: student.address,
+    phone: student.phone,
+    origin: student.origin,
+    sex: student.sex,
+    guardian_name: student.guardian?.name,
+    guardian_phone: student.guardian?.phone,
+    guardian_occupation: student.guardian?.occupation,
+    guardian_state: student.guardian?.stateOfOrigin,
+    class: student.class,
+    enrollment_date: student.enrollmentDate,
+    fee_status: student.feeStatus || 'unpaid',
+    amount_paid: student.amountPaid || 0,
+    total_fee: student.totalFee || 6000,
+  }).select().single();
   if (error) throw error;
   return mapStudentFromDB(data);
 };
@@ -152,7 +145,6 @@ export const createPayment = async (payment: Partial<Payment>): Promise<Payment>
     status: payment.status || 'completed',
   }).select().single();
   if (error) throw error;
-  // Update student fee status
   const { data: student } = await supabase.from('students').select('amount_paid, total_fee').eq('student_id', payment.studentId).single();
   if (student) {
     const newAmountPaid = Number(student.amount_paid) + Number(payment.amount);
@@ -205,7 +197,6 @@ export const deleteAnnouncementDB = async (id: string): Promise<void> => {
 export const fetchBlogPosts = async (): Promise<BlogPost[]> => {
   const { data: posts, error } = await supabase.from('blog_posts').select('*').order('created_at', { ascending: false });
   if (error) throw error;
-  // Fetch likes for all posts
   const { data: likes } = await supabase.from('blog_likes').select('post_id, user_id');
   const likesMap: Record<string, string[]> = {};
   (likes || []).forEach(l => {
@@ -248,14 +239,21 @@ export const deleteBlogPostDB = async (id: string): Promise<void> => {
 };
 
 export const toggleBlogLikeDB = async (postId: string, userId: string): Promise<boolean> => {
-  // Check if already liked
-  const { data: existing } = await supabase.from('blog_likes').select('id').eq('post_id', postId).eq('user_id', userId).single();
+  // Use maybeSingle to avoid throwing on no rows
+  const { data: existing } = await supabase
+    .from('blog_likes')
+    .select('id')
+    .eq('post_id', postId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
   if (existing) {
     await supabase.from('blog_likes').delete().eq('post_id', postId).eq('user_id', userId);
-    return false; // unliked
+    return false;
   } else {
-    await supabase.from('blog_likes').insert({ post_id: postId, user_id: userId });
-    return true; // liked
+    const { error } = await supabase.from('blog_likes').insert({ post_id: postId, user_id: userId });
+    if (error) throw error;
+    return true;
   }
 };
 

@@ -1,18 +1,20 @@
 /**
- * Admin Blog Management - Create, edit, delete blog posts (real Supabase)
+ * Admin Blog Management - Fixed layout with full post view
  */
 
 import React, { useState } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiCalendar, FiHeart, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiCalendar, FiHeart, FiEye, FiEyeOff, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { BlogPost } from '@/types';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { useAuth } from '@/features/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import { formatDate } from '@/utils/helpers';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { InlineLoader } from '@/components/ui/page-loader';
 
 interface BlogModalProps {
   isOpen: boolean;
@@ -53,7 +55,7 @@ const BlogModal: React.FC<BlogModalProps> = ({ isOpen, onClose, post, onSubmit }
 
   return (
     <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-card rounded-2xl border border-border shadow-strong w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">{post ? t.editBlogPost : t.newBlogPost}</h2>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors"><FiX className="w-5 h-5" /></button>
@@ -90,9 +92,11 @@ const BlogModal: React.FC<BlogModalProps> = ({ isOpen, onClose, post, onSubmit }
 export const AdminBlogPage: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { blogPosts, addBlogPost, updateBlogPost, deleteBlogPost } = useSharedData();
+  const { blogPosts, addBlogPost, updateBlogPost, deleteBlogPost, isLoading } = useSharedData();
   const [showModal, setShowModal] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | undefined>();
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const handleSubmit = async (data: Partial<BlogPost>) => {
     try {
@@ -109,13 +113,13 @@ export const AdminBlogPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm(t.confirmDeletePost)) {
-      try {
-        await deleteBlogPost(id);
-        toast.success(t.blogPostDeleted);
-      } catch { toast.error('Failed to delete'); }
-    }
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await deleteBlogPost(deleteConfirm);
+      toast.success(t.blogPostDeleted);
+    } catch { toast.error('Failed to delete'); }
+    setDeleteConfirm(null);
   };
 
   const togglePublish = async (id: string) => {
@@ -125,6 +129,8 @@ export const AdminBlogPage: React.FC = () => {
       toast.success(post?.isPublished ? t.postUnpublished : t.postPublished);
     } catch { toast.error('Failed to update'); }
   };
+
+  if (isLoading) return <InlineLoader />;
 
   return (
     <div className="space-y-6">
@@ -154,35 +160,55 @@ export const AdminBlogPage: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {blogPosts.map(post => (
-          <div key={post.id} className={`bg-card rounded-2xl border border-border p-6 shadow-soft transition-opacity ${!post.isPublished ? 'opacity-60' : ''}`}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <h3 className="font-semibold text-foreground">{post.title}</h3>
-                  {!post.isPublished && <Badge variant="outline" className="opacity-60">{t.draft}</Badge>}
+        {blogPosts.map(post => {
+          const isExpanded = expandedPostId === post.id;
+          return (
+            <div key={post.id} className={`bg-card rounded-2xl border border-border shadow-soft transition-all ${!post.isPublished ? 'opacity-60' : ''}`}>
+              <div className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <h3 className="font-semibold text-lg text-foreground">{post.title}</h3>
+                      {!post.isPublished && <Badge variant="outline" className="opacity-60">{t.draft}</Badge>}
+                    </div>
+                    {!isExpanded ? (
+                      <p className="text-sm text-muted-foreground line-clamp-2">{post.excerpt || post.content.slice(0, 200)}</p>
+                    ) : (
+                      <div className="text-sm text-foreground/90 mt-3 space-y-3">
+                        {post.content.split('\n\n').map((p, i) => (
+                          <p key={i} className="leading-relaxed">{p}</p>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
+                      <span className="flex items-center gap-1"><FiCalendar className="w-3 h-3" />{formatDate(post.createdAt)}</span>
+                      <span className="flex items-center gap-1"><FiHeart className="w-3 h-3" />{post.likes.length} {t.likes}</span>
+                      <div className="flex gap-1 flex-wrap">{post.tags.map(tag => <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>)}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => setExpandedPostId(isExpanded ? null : post.id)}
+                      className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                      title={isExpanded ? 'Collapse' : 'Expand'}
+                    >
+                      {isExpanded ? <FiChevronUp className="w-4 h-4" /> : <FiChevronDown className="w-4 h-4" />}
+                    </button>
+                    <button onClick={() => togglePublish(post.id)} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title={post.isPublished ? 'Unpublish' : 'Publish'}>
+                      {post.isPublished ? <FiEye className="w-4 h-4" /> : <FiEyeOff className="w-4 h-4" />}
+                    </button>
+                    <button onClick={() => { setEditingPost(post); setShowModal(true); }} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="Edit">
+                      <FiEdit2 className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setDeleteConfirm(post.id)} className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive" title="Delete">
+                      <FiTrash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-2">{post.excerpt}</p>
-                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><FiCalendar className="w-3 h-3" />{formatDate(post.createdAt)}</span>
-                  <span className="flex items-center gap-1"><FiHeart className="w-3 h-3" />{post.likes.length} {t.likes}</span>
-                  <div className="flex gap-1">{post.tags.map(tag => <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>)}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => togglePublish(post.id)} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
-                  {post.isPublished ? <FiEye className="w-4 h-4" /> : <FiEyeOff className="w-4 h-4" />}
-                </button>
-                <button onClick={() => { setEditingPost(post); setShowModal(true); }} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
-                  <FiEdit2 className="w-4 h-4" />
-                </button>
-                <button onClick={() => handleDelete(post.id)} className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive">
-                  <FiTrash2 className="w-4 h-4" />
-                </button>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {blogPosts.length === 0 && (
           <div className="text-center py-12 bg-card rounded-2xl border border-border">
             <p className="text-muted-foreground">{t.noBlogPostsYet}</p>
@@ -196,6 +222,16 @@ export const AdminBlogPage: React.FC = () => {
         onClose={() => { setShowModal(false); setEditingPost(undefined); }}
         post={editingPost}
         onSubmit={handleSubmit}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}
+        title="Delete Blog Post"
+        description="Are you sure you want to delete this blog post? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        variant="destructive"
       />
     </div>
   );
