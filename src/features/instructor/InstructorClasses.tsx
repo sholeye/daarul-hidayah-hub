@@ -1,5 +1,5 @@
 /**
- * Instructor Classes Page - Uses shared data instead of mock
+ * Instructor Classes Page - Uses shared data, shows all classes
  */
 
 import React from 'react';
@@ -7,21 +7,22 @@ import { FiUsers, FiBook } from 'react-icons/fi';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 import { InlineLoader } from '@/components/ui/page-loader';
+import { motion } from 'framer-motion';
 
 export const InstructorClasses: React.FC = () => {
   const { students, schoolClasses, isLoading } = useSharedData();
-  const assignedClasses = schoolClasses.slice(0, 2);
 
   if (isLoading) return <InlineLoader />;
 
   return (
-    <div className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-6">
       <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Classes</h1><p className="text-muted-foreground mt-1">View your assigned classes and students</p></div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {assignedClasses.map(cls => {
+        {schoolClasses.map((cls, idx) => {
           const classStudents = students.filter(s => s.class === cls.name);
           return (
-            <div key={cls.id} className="bg-card rounded-2xl border border-border p-6">
+            <motion.div key={cls.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.08 }}
+              className="bg-card rounded-2xl border border-border p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center"><FiBook className="w-6 h-6 text-primary" /></div>
                 <div><h3 className="font-semibold text-foreground">{cls.name}</h3><p className="text-sm text-muted-foreground">{cls.nameArabic}</p></div>
@@ -37,16 +38,16 @@ export const InstructorClasses: React.FC = () => {
                 ))}
                 {classStudents.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No students in this class</p>}
               </div>
-            </div>
+            </motion.div>
           );
         })}
-        {assignedClasses.length === 0 && (
+        {schoolClasses.length === 0 && (
           <div className="col-span-2 text-center py-12 bg-card rounded-2xl border border-border">
             <FiUsers className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No classes assigned yet</p>
+            <p className="text-muted-foreground">No classes available</p>
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };

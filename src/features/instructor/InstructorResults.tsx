@@ -1,28 +1,34 @@
 /**
- * Instructor Results Page - Enter/Edit scores with shared state
+ * Instructor Results Page - Uses shared data (no mock imports)
  */
 
 import React, { useState } from 'react';
-import { FiFileText, FiSave, FiCheck } from 'react-icons/fi';
-import { schoolClasses } from '@/data/mockData';
-import { Student, StudentResult } from '@/types';
+import { FiFileText, FiSave } from 'react-icons/fi';
+import { Student } from '@/types';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { calculateGrade, getGradeRemarks } from '@/utils/helpers';
+import { InlineLoader } from '@/components/ui/page-loader';
+import { motion } from 'framer-motion';
 
 const SUBJECTS = ['Arabic Language', 'Islamic Studies', 'Quran Memorization', 'Hadith', 'Fiqh', 'English Language', 'Mathematics', 'IT/Computer'];
 
 export const InstructorResults: React.FC = () => {
-  const { students, results, addOrUpdateResult } = useSharedData();
-  const assignedClasses = schoolClasses.slice(0, 2);
-  const [selectedClass, setSelectedClass] = useState(assignedClasses[0]?.name || '');
+  const { students, results, schoolClasses, addOrUpdateResult, isLoading } = useSharedData();
+  const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [teacherRemarks, setTeacherRemarks] = useState('');
   const [position, setPosition] = useState('1');
+
+  React.useEffect(() => {
+    if (schoolClasses.length > 0 && !selectedClass) {
+      setSelectedClass(schoolClasses[0].name);
+    }
+  }, [schoolClasses, selectedClass]);
 
   const classStudents = students.filter(s => s.class === selectedClass);
 
@@ -42,7 +48,7 @@ export const InstructorResults: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedStudent) return;
     const subjects = SUBJECTS.map(subject => {
       const score = scores[subject] || 0;
@@ -52,25 +58,31 @@ export const InstructorResults: React.FC = () => {
     const totalScore = subjects.reduce((sum, s) => sum + s.score, 0);
     const averageScore = totalScore / subjects.length;
 
-    addOrUpdateResult({
-      id: Date.now().toString(),
-      studentId: selectedStudent.studentId,
-      term: 'First Term', session: '2024/2025',
-      subjects, totalScore, averageScore,
-      position: parseInt(position), teacherRemarks, principalRemarks: '',
-      createdAt: new Date().toISOString().split('T')[0],
-    });
-    toast.success('Result saved successfully!');
-    setSelectedStudent(null);
-    setScores({});
+    try {
+      await addOrUpdateResult({
+        id: Date.now().toString(),
+        studentId: selectedStudent.studentId,
+        term: 'First Term', session: '2024/2025',
+        subjects, totalScore, averageScore,
+        position: parseInt(position), teacherRemarks, principalRemarks: '',
+        createdAt: new Date().toISOString().split('T')[0],
+      });
+      toast.success('Result saved successfully!');
+      setSelectedStudent(null);
+      setScores({});
+    } catch {
+      toast.error('Failed to save result');
+    }
   };
 
+  if (isLoading) return <InlineLoader />;
+
   return (
-    <div className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-6">
       <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">Enter Results</h1><p className="text-muted-foreground mt-1">Enter scores for students in your classes</p></div>
 
       <select value={selectedClass} onChange={(e) => { setSelectedClass(e.target.value); setSelectedStudent(null); }} className="h-10 px-4 rounded-lg border border-input bg-background text-foreground">
-        {assignedClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+        {schoolClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
       </select>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -90,6 +102,7 @@ export const InstructorResults: React.FC = () => {
                 </button>
               );
             })}
+            {classStudents.length === 0 && <p className="text-muted-foreground text-center py-4">No students in this class</p>}
           </div>
         </div>
 
@@ -120,6 +133,6 @@ export const InstructorResults: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
