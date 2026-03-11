@@ -1,5 +1,5 @@
 /**
- * Parent Dashboard - Uses real shared data (RLS filters to linked children)
+ * Parent Dashboard - Real shared data with animations
  */
 
 import React from 'react';
@@ -11,45 +11,38 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/utils/helpers';
 import { InlineLoader } from '@/components/ui/page-loader';
+import { motion } from 'framer-motion';
 
 export const ParentDashboard: React.FC = () => {
   const { user } = useAuth();
   const { students, results, attendance, announcements, isLoading } = useSharedData();
 
-  // RLS ensures parents only see their linked children
-  const myChildren = students;
+  const myChildren = students; // RLS filters
   const activeAnnouncements = announcements.filter(a => a.isActive).slice(0, 3);
 
   if (isLoading) return <InlineLoader />;
 
   return (
-    <div className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-6">
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-6 text-primary-foreground">
         <h1 className="text-2xl sm:text-3xl font-bold">Assalamu Alaikum, {user?.name?.split(' ')[0] || 'Parent'}</h1>
         <p className="mt-2 opacity-90">Monitor your children's academic progress and school activities.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><FiUsers className="w-5 h-5 text-primary" /></div></div>
-          <p className="text-2xl font-bold text-foreground">{myChildren.length}</p>
-          <p className="text-sm text-muted-foreground">Children Enrolled</p>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><FiDollarSign className="w-5 h-5 text-primary" /></div></div>
-          <p className="text-2xl font-bold text-foreground">{myChildren.filter(c => c.feeStatus === 'paid').length}/{myChildren.length}</p>
-          <p className="text-sm text-muted-foreground">Fees Paid</p>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center"><FiFileText className="w-5 h-5 text-secondary" /></div></div>
-          <p className="text-2xl font-bold text-foreground">{myChildren.filter(c => results.some(r => r.studentId === c.studentId)).length}</p>
-          <p className="text-sm text-muted-foreground">Results Available</p>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center"><FiCalendar className="w-5 h-5 text-accent-foreground" /></div></div>
-          <p className="text-2xl font-bold text-foreground">{activeAnnouncements.length}</p>
-          <p className="text-sm text-muted-foreground">Announcements</p>
-        </div>
+        {[
+          { icon: FiUsers, value: myChildren.length, label: 'Children Enrolled', bg: 'bg-primary/10', color: 'text-primary' },
+          { icon: FiDollarSign, value: `${myChildren.filter(c => c.feeStatus === 'paid').length}/${myChildren.length}`, label: 'Fees Paid', bg: 'bg-primary/10', color: 'text-primary' },
+          { icon: FiFileText, value: myChildren.filter(c => results.some(r => r.studentId === c.studentId)).length, label: 'Results Available', bg: 'bg-secondary/10', color: 'text-secondary' },
+          { icon: FiCalendar, value: activeAnnouncements.length, label: 'Announcements', bg: 'bg-accent/10', color: 'text-accent-foreground' },
+        ].map((item, idx) => (
+          <motion.div key={item.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.08 }}
+            className="bg-card rounded-xl border border-border p-4">
+            <div className="flex items-center gap-3 mb-3"><div className={`w-10 h-10 rounded-lg ${item.bg} flex items-center justify-center`}><item.icon className={`w-5 h-5 ${item.color}`} /></div></div>
+            <p className="text-2xl font-bold text-foreground">{item.value}</p>
+            <p className="text-sm text-muted-foreground">{item.label}</p>
+          </motion.div>
+        ))}
       </div>
 
       <div className="bg-card rounded-2xl border border-border p-6">
@@ -103,6 +96,6 @@ export const ParentDashboard: React.FC = () => {
           ))}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

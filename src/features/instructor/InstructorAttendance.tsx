@@ -1,24 +1,30 @@
 /**
- * Instructor Attendance Page - Shared state
+ * Instructor Attendance Page - Uses shared data (no mock imports)
  */
 
 import React, { useState, useCallback } from 'react';
 import { FiCheckCircle, FiXCircle, FiCalendar, FiCheck } from 'react-icons/fi';
-import { schoolClasses } from '@/data/mockData';
-import { AttendanceRecord } from '@/types';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { InlineLoader } from '@/components/ui/page-loader';
+import { motion } from 'framer-motion';
 
 export const InstructorAttendance: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
-  const { students, attendance, setAttendanceRecord, bulkSetAttendance } = useSharedData();
-  const assignedClasses = schoolClasses.slice(0, 2);
-  const [selectedClass, setSelectedClass] = useState(assignedClasses[0]?.name || '');
+  const { students, attendance, schoolClasses, setAttendanceRecord, bulkSetAttendance, isLoading } = useSharedData();
+  const [selectedClass, setSelectedClass] = useState('');
   const [selectedDate, setSelectedDate] = useState(today);
+
+  // Set default class when data loads
+  React.useEffect(() => {
+    if (schoolClasses.length > 0 && !selectedClass) {
+      setSelectedClass(schoolClasses[0].name);
+    }
+  }, [schoolClasses, selectedClass]);
 
   const isFutureDate = selectedDate > today;
   const classStudents = students.filter(s => s.class === selectedClass);
@@ -50,8 +56,10 @@ export const InstructorAttendance: React.FC = () => {
   const presentCount = classStudents.filter(s => getStatus(s.studentId) === 'present').length;
   const absentCount = classStudents.filter(s => getStatus(s.studentId) === 'absent').length;
 
+  if (isLoading) return <InlineLoader />;
+
   return (
-    <div className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">Mark Attendance</h1><p className="text-muted-foreground mt-1">Select a class and mark attendance</p></div>
         {selectedDate === today && <Button variant="outline" onClick={markAllPresent}><FiCheck className="w-4 h-4 mr-2" />Mark All Present</Button>}
@@ -64,7 +72,9 @@ export const InstructorAttendance: React.FC = () => {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="h-10 px-4 rounded-lg border border-input bg-background text-foreground">{assignedClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select>
+        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="h-10 px-4 rounded-lg border border-input bg-background text-foreground">
+          {schoolClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+        </select>
         <div className="relative"><FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" /><Input type="date" value={selectedDate} max={today} onChange={(e) => setSelectedDate(e.target.value)} className="pl-12 w-full sm:w-48" /></div>
       </div>
 
@@ -87,7 +97,8 @@ export const InstructorAttendance: React.FC = () => {
             })}
           </tbody>
         </table>
+        {classStudents.length === 0 && <div className="p-12 text-center"><p className="text-muted-foreground">No students in this class</p></div>}
       </div>
-    </div>
+    </motion.div>
   );
 };

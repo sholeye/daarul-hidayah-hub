@@ -1,47 +1,46 @@
 /**
- * Instructor Dashboard - Uses real shared data
+ * Instructor Dashboard - Uses real shared data, shows all classes
  */
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiUsers, FiCalendar, FiFileText, FiArrowRight, FiEye } from 'react-icons/fi';
+import { FiUsers, FiCalendar, FiFileText, FiArrowRight } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { InlineLoader } from '@/components/ui/page-loader';
+import { motion } from 'framer-motion';
 
 export const InstructorDashboard: React.FC = () => {
   const { user } = useAuth();
   const { students, schoolClasses, results, isLoading } = useSharedData();
 
-  const assignedClasses = schoolClasses.slice(0, 2);
-  const totalStudents = students.filter(s => assignedClasses.some(c => c.name === s.class)).length;
+  const totalStudents = students.length;
   const pendingResults = students.filter(s =>
-    assignedClasses.some(c => c.name === s.class) &&
     !results.some(r => r.studentId === s.studentId)
   ).length;
 
   if (isLoading) return <InlineLoader />;
 
   return (
-    <div className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-6">
       <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-6 text-primary-foreground">
         <h1 className="text-2xl sm:text-3xl font-bold">Assalamu Alaikum, {user?.name?.split(' ')[0]}</h1>
         <p className="mt-2 opacity-90">Manage your classes and students.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
+        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} transition={{ delay: 0.1 }} className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center"><FiUsers className="w-6 h-6 text-primary" /></div>
-          <div><p className="text-2xl font-bold text-foreground">{assignedClasses.length}</p><p className="text-sm text-muted-foreground">Classes</p></div>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
+          <div><p className="text-2xl font-bold text-foreground">{schoolClasses.length}</p><p className="text-sm text-muted-foreground">Classes</p></div>
+        </motion.div>
+        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} transition={{ delay: 0.15 }} className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center"><FiUsers className="w-6 h-6 text-secondary" /></div>
           <div><p className="text-2xl font-bold text-foreground">{totalStudents}</p><p className="text-sm text-muted-foreground">Students</p></div>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
+        </motion.div>
+        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }} className="bg-card rounded-xl border border-border p-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center"><FiFileText className="w-6 h-6 text-accent-foreground" /></div>
           <div><p className="text-2xl font-bold text-foreground">{pendingResults}</p><p className="text-sm text-muted-foreground">Pending Results</p></div>
-        </div>
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -60,9 +59,9 @@ export const InstructorDashboard: React.FC = () => {
       </div>
 
       <div className="bg-card rounded-2xl border border-border p-6">
-        <h3 className="font-semibold text-foreground mb-4">My Classes</h3>
+        <h3 className="font-semibold text-foreground mb-4">All Classes</h3>
         <div className="space-y-3">
-          {assignedClasses.map(c => {
+          {schoolClasses.map(c => {
             const classStudentCount = students.filter(s => s.class === c.name).length;
             return (
               <div key={c.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
@@ -71,11 +70,11 @@ export const InstructorDashboard: React.FC = () => {
               </div>
             );
           })}
-          {assignedClasses.length === 0 && (
-            <p className="text-muted-foreground text-center py-4">No classes assigned yet</p>
+          {schoolClasses.length === 0 && (
+            <p className="text-muted-foreground text-center py-4">No classes available</p>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
