@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/lib/supabase';
 import { UserRole } from '@/types';
-import { pickPrimaryRole } from '@/features/auth/roleUtils';
+import { motion } from 'framer-motion';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -35,9 +34,7 @@ const Login: React.FC = () => {
 
   const canAccessPath = (role: UserRole, path?: string) => {
     if (!path) return false;
-    // Admin is a superuser in this app
     if (role === 'admin') return true;
-
     if (path.startsWith('/admin')) return false;
     if (path.startsWith('/instructor')) return role === 'instructor';
     if (path.startsWith('/learner')) return role === 'learner';
@@ -48,26 +45,27 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const result = await login(email, password);
-    setIsLoading(false);
-    if (result.success) {
-      toast.success(t.success || 'Login successful!');
-      // Fetch the user's role to redirect properly
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session?.user) {
-        const { data: roleRows } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', sessionData.session.user.id);
 
-        const role = pickPrimaryRole(roleRows, sessionData.session.user.user_metadata?.role);
-        const fallbackPath = getRoleBasedPath(role);
-        navigate(canAccessPath(role, from) ? from! : fallbackPath, { replace: true });
-      } else {
+    try {
+      const result = await login(email, password);
+
+      if (result.success && result.role) {
+        toast.success(t.success || 'Login successful!');
+        const fallbackPath = getRoleBasedPath(result.role);
+        const targetPath = canAccessPath(result.role, from) ? from! : fallbackPath;
+        // Navigate immediately using the role returned from login
+        navigate(targetPath, { replace: true });
+      } else if (result.success) {
+        // Fallback: role wasn't returned, go to home
+        toast.success(t.success || 'Login successful!');
         navigate(from || '/', { replace: true });
+      } else {
+        toast.error(result.message);
       }
-    } else {
-      toast.error(result.message);
+    } catch (err) {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -78,21 +76,36 @@ const Login: React.FC = () => {
         <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-secondary/8 rounded-full blur-3xl" />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md relative z-10"
+      >
         <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8">
           <FiArrowLeft className="w-4 h-4" />
           <span className="text-sm font-medium">{t.backToHome}</span>
         </Link>
 
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto mb-5 shadow-glow">
+          <motion.div
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mx-auto mb-5 shadow-glow"
+          >
             <span className="text-primary-foreground font-bold text-3xl">د</span>
-          </div>
+          </motion.div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t.welcomeBackLogin}</h1>
           <p className="text-muted-foreground mt-2">{t.signInToPortal}</p>
         </div>
 
-        <div className="bg-card rounded-2xl border border-border shadow-medium p-6 sm:p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="bg-card rounded-2xl border border-border shadow-medium p-6 sm:p-8"
+        >
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">{t.emailAddress}</label>
@@ -112,8 +125,15 @@ const Login: React.FC = () => {
               </div>
             </div>
             <Button type="submit" className="w-full h-12 text-base font-medium btn-glow" disabled={isLoading}>
-              {isLoading ? t.signingIn : t.signIn}
-              <FiLogIn className="w-5 h-5 ml-2" />
+              {isLoading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
+                />
+              ) : (
+                <>{t.signIn}<FiLogIn className="w-5 h-5 ml-2" /></>
+              )}
             </Button>
           </form>
 
@@ -125,8 +145,8 @@ const Login: React.FC = () => {
           <p className="text-xs text-center text-muted-foreground mt-4">
             Students receive login credentials from the school administrator.
           </p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

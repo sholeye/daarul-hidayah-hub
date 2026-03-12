@@ -1,27 +1,36 @@
 /**
- * Learner Fees Page - Real Supabase data
+ * Learner Fees Page - RLS-filtered, no wrong fallback
  */
 
 import React from 'react';
-import { FiDollarSign, FiCheckCircle, FiAlertCircle, FiFileText } from 'react-icons/fi';
+import { FiDollarSign, FiCheckCircle, FiAlertCircle, FiFileText, FiUser } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate } from '@/utils/helpers';
+import { InlineLoader } from '@/components/ui/page-loader';
+import { motion } from 'framer-motion';
 
 export const LearnerFees: React.FC = () => {
   const { user } = useAuth();
-  const { students, payments } = useSharedData();
-  const student = students.find(s => s.email === user?.email) || students[0];
-  const studentPayments = payments.filter(p => p.studentId === student?.studentId);
+  const { students, payments, isLoading } = useSharedData();
+  const student = students.length === 1 ? students[0] : students.find(s => s.email === user?.email) || null;
+  const studentPayments = student ? payments.filter(p => p.studentId === student.studentId) : [];
 
-  if (!student) return <div className="p-12 text-center text-muted-foreground">No student record found</div>;
+  if (isLoading) return <InlineLoader />;
+
+  if (!student) return (
+    <div className="p-12 text-center">
+      <FiUser className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+      <p className="text-muted-foreground">No student record found for your account.</p>
+    </div>
+  );
 
   const feeBalance = student.totalFee - student.amountPaid;
   const paymentPercentage = Math.round((student.amountPaid / student.totalFee) * 100);
 
   return (
-    <div className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">Fee Status</h1><p className="text-muted-foreground mt-1">View your fee payment details</p></div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -32,7 +41,10 @@ export const LearnerFees: React.FC = () => {
 
       <div className="bg-card rounded-2xl border border-border p-6">
         <div className="flex items-center justify-between mb-4"><h3 className="font-semibold text-foreground">Payment Progress</h3><Badge variant={student.feeStatus === 'paid' ? 'paid' : student.feeStatus === 'partial' ? 'late' : 'unpaid'}>{student.feeStatus}</Badge></div>
-        <div className="relative h-4 bg-muted rounded-full overflow-hidden"><div className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500" style={{ width: `${paymentPercentage}%` }} /></div>
+        <div className="relative h-4 bg-muted rounded-full overflow-hidden">
+          <motion.div initial={{ width: 0 }} animate={{ width: `${paymentPercentage}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/70 rounded-full" />
+        </div>
         <div className="flex justify-between mt-2 text-sm"><span className="text-muted-foreground">0%</span><span className="font-medium text-foreground">{paymentPercentage}% paid</span><span className="text-muted-foreground">100%</span></div>
         {feeBalance > 0 && <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl"><div className="flex items-start gap-3"><FiAlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" /><div><p className="font-medium text-destructive">Outstanding Balance</p><p className="text-sm text-muted-foreground mt-1">You have an outstanding balance of {formatCurrency(feeBalance)}. Complete payment to access results.</p></div></div></div>}
         {feeBalance === 0 && <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-xl"><div className="flex items-start gap-3"><FiCheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" /><div><p className="font-medium text-primary">Fully Paid</p><p className="text-sm text-muted-foreground mt-1">All fees paid. Full access granted.</p></div></div></div>}
@@ -67,6 +79,6 @@ export const LearnerFees: React.FC = () => {
           <div className="p-12 text-center"><FiDollarSign className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" /><p className="text-muted-foreground">No payment records</p></div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };

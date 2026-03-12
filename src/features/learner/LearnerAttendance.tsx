@@ -1,26 +1,37 @@
 /**
- * Learner Attendance Page - Real Supabase data
+ * Learner Attendance Page - RLS-filtered, no wrong fallback
  */
 
 import React, { useState } from 'react';
-import { FiCalendar, FiCheckCircle, FiClock, FiXCircle, FiFilter } from 'react-icons/fi';
+import { FiCalendar, FiCheckCircle, FiClock, FiXCircle, FiFilter, FiUser } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/utils/helpers';
+import { InlineLoader } from '@/components/ui/page-loader';
+import { motion } from 'framer-motion';
 
 export const LearnerAttendance: React.FC = () => {
   const { user } = useAuth();
-  const { students, attendance } = useSharedData();
-  const student = students.find(s => s.email === user?.email) || students[0];
+  const { students, attendance, isLoading } = useSharedData();
+  const student = students.length === 1 ? students[0] : students.find(s => s.email === user?.email) || null;
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
+  if (isLoading) return <InlineLoader />;
+
+  if (!student) return (
+    <div className="p-12 text-center">
+      <FiUser className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+      <p className="text-muted-foreground">No student record found for your account.</p>
+    </div>
+  );
+
   const studentAttendance = attendance
-    .filter(a => a.studentId === student?.studentId)
+    .filter(a => a.studentId === student.studentId)
     .filter(a => filterStatus === 'all' || a.status === filterStatus)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const allAttendance = attendance.filter(a => a.studentId === student?.studentId);
+  const allAttendance = attendance.filter(a => a.studentId === student.studentId);
   const presentCount = allAttendance.filter(a => a.status === 'present').length;
   const lateCount = allAttendance.filter(a => a.status === 'late').length;
   const absentCount = allAttendance.filter(a => a.status === 'absent').length;
@@ -28,7 +39,7 @@ export const LearnerAttendance: React.FC = () => {
   const attendancePercentage = Math.round(((presentCount + lateCount) / totalDays) * 100);
 
   return (
-    <div className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Attendance</h1><p className="text-muted-foreground mt-1">View your attendance history</p></div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -73,6 +84,6 @@ export const LearnerAttendance: React.FC = () => {
         </div>
         {studentAttendance.length === 0 && <div className="p-12 text-center"><FiCalendar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" /><p className="text-muted-foreground">No attendance records</p></div>}
       </div>
-    </div>
+    </motion.div>
   );
 };

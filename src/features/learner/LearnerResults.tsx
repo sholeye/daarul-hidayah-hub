@@ -1,21 +1,23 @@
 /**
- * Learner Results Page - Real Supabase data, fee-gated
+ * Learner Results Page - RLS-filtered, no wrong fallback
  */
 
 import React from 'react';
-import { FiFileText, FiDownload, FiLock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FiFileText, FiDownload, FiLock, FiUser } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { InlineLoader } from '@/components/ui/page-loader';
+import { motion } from 'framer-motion';
 import jsPDF from 'jspdf';
 
 export const LearnerResults: React.FC = () => {
   const { user } = useAuth();
-  const { students, results } = useSharedData();
-  const student = students.find(s => s.email === user?.email) || students[0];
-  const result = results.find(r => r.studentId === student?.studentId);
+  const { students, results, isLoading } = useSharedData();
+  const student = students.length === 1 ? students[0] : students.find(s => s.email === user?.email) || null;
+  const result = student ? results.find(r => r.studentId === student.studentId) : null;
   const feesPaid = student?.feeStatus === 'paid';
 
   const generateResultPDF = () => {
@@ -47,10 +49,17 @@ export const LearnerResults: React.FC = () => {
     toast.success('Result PDF downloaded!');
   };
 
-  if (!student) return <div className="p-12 text-center text-muted-foreground">No student record found</div>;
+  if (isLoading) return <InlineLoader />;
+
+  if (!student) return (
+    <div className="p-12 text-center">
+      <FiUser className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+      <p className="text-muted-foreground">No student record found for your account.</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Results</h1><p className="text-muted-foreground mt-1">View your academic performance</p></div>
         {result && feesPaid && <Button onClick={generateResultPDF} className="btn-glow"><FiDownload className="w-4 h-4 mr-2" />Download PDF</Button>}
@@ -118,6 +127,6 @@ export const LearnerResults: React.FC = () => {
           </div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 };

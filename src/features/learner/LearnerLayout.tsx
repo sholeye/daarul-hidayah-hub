@@ -1,5 +1,5 @@
 /**
- * Learner Layout - with logout confirmation
+ * Learner Layout - with logout confirmation and notifications
  */
 
 import React, { useState } from 'react';
@@ -9,6 +9,7 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/features/app/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export const LearnerLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -33,7 +34,10 @@ export const LearnerLayout: React.FC = () => {
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-40 px-4 flex items-center justify-between">
         <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-muted transition-colors"><FiMenu className="w-6 h-6" /></button>
         <span className="font-semibold text-foreground">{t.studentPortal}</span>
-        <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-muted transition-colors">{theme === 'dark' ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}</button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-muted transition-colors">{theme === 'dark' ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}</button>
+        </div>
       </header>
 
       {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40" onClick={() => setSidebarOpen(false)} />}
