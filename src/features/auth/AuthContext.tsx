@@ -7,12 +7,19 @@ import { User, UserRole } from '@/types';
 import { supabase, createIsolatedAuthClient } from '@/lib/supabase';
 import { pickPrimaryRole } from './roleUtils';
 
+interface LoginResult {
+  success: boolean;
+  message: string;
+  role?: UserRole;
+  userId?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   refreshUser: () => Promise<void>;
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
+  login: (email: string, password: string) => Promise<LoginResult>;
   signup: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   createStudentAccount: (email: string, password: string, fullName: string) => Promise<{ success: boolean; userId?: string; message: string }>;
@@ -74,13 +81,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     else setUser(null);
   }, [fetchUserWithRole]);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password: password.trim(),
     });
     if (error) return { success: false, message: error.message };
-    if (data.user) return { success: true, message: 'Login successful!' };
+    if (data.user) {
+      // Fetch role immediately so caller can redirect
+      const { data: roleRows } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id);
+      const role = pickPrimaryRole(roleRows, data.user.user_metadata?.role);
+      return { success: true, message: 'Login successful!', role, userId: data.user.id };
+    }
     return { success: false, message: 'Login failed. Please try again.' };
   }, []);
 
@@ -172,12 +187,10 @@ export const useRequireRole = (allowedRoles: UserRole[]) => {
  */
 export const generateStudentCredentials = (fullName: string, studentId: string) => {
   const firstName = fullName.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '').slice(0, 10);
-  // Use last 2 digits from studentId counter
   const counterMatch = studentId.match(/(\d+)/);
   const counter = counterMatch ? counterMatch[1].padStart(2, '0') : '01';
   const username = `${firstName}${counter}@dh.edu`;
 
-  // Generate a short but secure password
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
   let pwd = 'DH-';
   for (let i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];

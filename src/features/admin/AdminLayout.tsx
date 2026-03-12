@@ -1,5 +1,5 @@
 /**
- * Admin Layout - with logout confirmation
+ * Admin Layout - with logout confirmation and notifications
  */
 
 import React, { useState } from 'react';
@@ -13,6 +13,7 @@ import { useTheme } from '@/features/app/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -96,9 +97,12 @@ export const AdminLayout: React.FC = () => {
             {sidebarOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
           </button>
           <div className="flex-1" />
-          <button onClick={toggleTheme} className="p-2.5 rounded-xl hover:bg-muted transition-colors" aria-label="Toggle theme">
-            {theme === 'light' ? <FiMoon className="w-5 h-5 text-foreground" /> : <FiSun className="w-5 h-5 text-foreground" />}
-          </button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <button onClick={toggleTheme} className="p-2.5 rounded-xl hover:bg-muted transition-colors" aria-label="Toggle theme">
+              {theme === 'light' ? <FiMoon className="w-5 h-5 text-foreground" /> : <FiSun className="w-5 h-5 text-foreground" />}
+            </button>
+          </div>
         </header>
         <main className="flex-1 p-4 lg:p-8"><Outlet /></main>
       </div>

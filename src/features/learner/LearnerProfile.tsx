@@ -1,5 +1,5 @@
 /**
- * Learner Profile Page - Real Supabase data
+ * Learner Profile Page - Uses RLS-filtered student data, no wrong fallback
  */
 
 import React, { useState } from 'react';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/utils/helpers';
 import { toast } from 'sonner';
+import { InlineLoader } from '@/components/ui/page-loader';
 
 interface InfoRowProps { icon: React.ElementType; label: string; value: string | undefined; }
 const InfoRow: React.FC<InfoRowProps> = ({ icon: Icon, label, value }) => (
@@ -22,9 +23,10 @@ const InfoRow: React.FC<InfoRowProps> = ({ icon: Icon, label, value }) => (
 
 export const LearnerProfile: React.FC = () => {
   const { user, requestPasswordReset } = useAuth();
-  const { students } = useSharedData();
+  const { students, isLoading } = useSharedData();
   const { t, isRTL } = useLanguage();
-  const student = students.find(s => s.email === user?.email) || students[0];
+  // RLS returns only the student's own record
+  const student = students.length === 1 ? students[0] : students.find(s => s.email === user?.email) || null;
   const [passwordResetRequested, setPasswordResetRequested] = useState(false);
 
   const handlePasswordReset = async () => {
@@ -38,7 +40,14 @@ export const LearnerProfile: React.FC = () => {
     }
   };
 
-  if (!student) return <div className="p-12 text-center text-muted-foreground">No student record found</div>;
+  if (isLoading) return <InlineLoader />;
+
+  if (!student) return (
+    <div className="p-12 text-center">
+      <FiUser className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+      <p className="text-muted-foreground">No student record found for your account. Please contact the administrator.</p>
+    </div>
+  );
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'} className="space-y-6">

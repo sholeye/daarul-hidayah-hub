@@ -1,5 +1,5 @@
 /**
- * Learner Dashboard - Real shared data with animations
+ * Learner Dashboard - Uses auth_user_id matching, no fallback to wrong student
  */
 
 import React from 'react';
@@ -9,7 +9,7 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDate, formatCurrency } from '@/utils/helpers';
+import { formatCurrency } from '@/utils/helpers';
 import { InlineLoader } from '@/components/ui/page-loader';
 import { motion } from 'framer-motion';
 
@@ -17,7 +17,9 @@ export const LearnerDashboard: React.FC = () => {
   const { user } = useAuth();
   const { students, results, attendance, announcements, isLoading } = useSharedData();
 
-  const currentStudent = students.find(s => s.email === user?.email);
+  // For learners, RLS returns only their own student record via auth_user_id
+  // Use the first (and only) student in the list since RLS handles filtering
+  const currentStudent = students.length === 1 ? students[0] : students.find(s => s.email === user?.email) || null;
   const studentResult = currentStudent ? results.find(r => r.studentId === currentStudent.studentId) : null;
 
   const studentAttendance = currentStudent ? attendance.filter(a => a.studentId === currentStudent.studentId) : [];
@@ -90,7 +92,7 @@ export const LearnerDashboard: React.FC = () => {
         <div className="bg-card rounded-2xl border border-border p-6">
           <h2 className="font-semibold text-foreground mb-4">Recent Announcements</h2>
           {activeAnnouncements.length > 0 ? <div className="space-y-3">{activeAnnouncements.map(ann => (
-            <div key={ann.id} className="p-3 rounded-lg bg-muted/50 border border-border"><div className="flex items-start justify-between gap-2"><h3 className="font-medium text-foreground text-sm">{ann.title}</h3><Badge variant={ann.category === 'urgent' ? 'destructive' : ann.category === 'academic' ? 'paid' : 'default'}>{ann.category}</Badge></div><p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ann.content}</p><p className="text-xs text-muted-foreground mt-2">{formatDate(ann.createdAt)}</p></div>
+            <div key={ann.id} className="p-3 rounded-lg bg-muted/50 border border-border"><div className="flex items-start justify-between gap-2"><h3 className="font-medium text-foreground text-sm">{ann.title}</h3><Badge variant={ann.category === 'urgent' ? 'destructive' : ann.category === 'academic' ? 'paid' : 'default'}>{ann.category}</Badge></div><p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ann.content}</p></div>
           ))}</div> : <div className="bg-muted/50 rounded-lg p-6 text-center"><p className="text-muted-foreground">No announcements</p></div>}
         </div>
       </div>

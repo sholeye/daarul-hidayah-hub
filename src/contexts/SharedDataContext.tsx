@@ -1,6 +1,7 @@
 /**
  * SharedDataContext - Real Supabase data store
  * Refetches on auth changes to prevent stale state.
+ * Creates notifications on key events.
  */
 
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useRef } from 'react';
@@ -8,6 +9,7 @@ import { BlogPost, Announcement, Student, Payment, AttendanceRecord, StudentResu
 import * as db from '@/services/supabaseService';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { createNotification, createBulkNotifications } from '@/services/notificationService';
 
 interface SharedDataContextType {
   isLoading: boolean;
@@ -69,7 +71,6 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
         db.fetchBlogPosts().catch(() => []),
         db.fetchSchoolClasses().catch(() => []),
       ]);
-      // Only apply if this is still the latest fetch
       if (id === fetchIdRef.current) {
         setStudents(s); setResults(r); setAttendance(att);
         setPayments(pay); setAnnouncements(ann); setBlogPosts(bp);
@@ -82,14 +83,11 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   }, []);
 
-  // Initial load
   useEffect(() => { refreshAll(); }, [refreshAll]);
 
-  // Re-fetch whenever auth state changes (login/logout/user switch)
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-        // Small delay to let the session settle
         setTimeout(() => refreshAll(), 100);
       }
     });
@@ -118,7 +116,25 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
       if (p.id !== postId) return p;
       return { ...p, likes: liked ? [...p.likes, userId] : p.likes.filter(id => id !== userId) };
     }));
-  }, []);
+
+    // Notify the post author when someone likes their post
+    if (liked) {
+      const post = blogPosts.find(p => p.id === postId);
+      if (post) {
+        // Get post author's user_id from blog_posts table
+        const { data: postData } = await supabase.from('blog_posts').select('author_id').eq('id', postId).single();
+        if (postData?.author_id && postData.author_id !== userId) {
+          createNotification(
+            postData.author_id,
+            'Post Liked ❤️',
+            `Someone liked your post "${post.title}"`,
+            'info',
+            '/blog'
+          ).catch(() => {});
+        }
+      }
+    }
+  }, [blogPosts]);
 
   // Announcements
   const addAnnouncement = useCallback(async (ann: Partial<Announcement>) => {
@@ -160,12 +176,26 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
     setStudents(prev => prev.filter(s => s.id !== id));
   }, []);
 
-  // Payments
+  // Payments - notify parent when fee is paid
   const addPayment = useCallback(async (payment: Partial<Payment>) => {
     const newPayment = await db.createPayment(payment);
     setPayments(prev => [newPayment, ...prev]);
     const freshStudents = await db.fetchStudents();
     setStudents(freshStudents);
+
+    // Notify linked parents about fee payment
+    if (payment.studentId) {
+      const { data: links } = await supabase.from('parent_students').select('parent_id').eq('student_id', payment.studentId);
+      if (links && links.length > 0) {
+        const parentIds = links.map(l => l.parent_id);
+        createBulkNotifications(
+          parentIds,
+          'Fee Payment Recorded 💰',
+          `A payment of ₦${Number(payment.amount).toLocaleString()} has been recorded for your child.`,
+          'success'
+        ).catch(() => {});
+      }
+    }
   }, []);
 
   // Attendance
