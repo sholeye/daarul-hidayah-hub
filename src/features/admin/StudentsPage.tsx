@@ -38,7 +38,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const studentId = generateStudentId(formData.fullName, Date.now());
+    const studentId = generateStudentId(formData.fullName, existingCount);
     const credentials = generateStudentCredentials(formData.fullName, studentId);
     onSubmit({
       studentId, fullName: formData.fullName, email: credentials.username,
