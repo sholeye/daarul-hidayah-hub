@@ -271,7 +271,14 @@ CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL TO authenti
 
 -- STUDENTS
 CREATE POLICY "Admins full access to students" ON public.students FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Instructors can view students" ON public.students FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'instructor'));
+CREATE POLICY "Instructors can view assigned students" ON public.students FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.school_classes sc
+      WHERE sc.name = students.class
+        AND sc.instructor_id = auth.uid()
+    )
+  );
 CREATE POLICY "Students can view own record" ON public.students FOR SELECT TO authenticated USING (auth_user_id = auth.uid());
 CREATE POLICY "Parents can view linked students" ON public.students FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.parent_students ps WHERE ps.parent_id = auth.uid() AND ps.student_id = students.student_id));
