@@ -386,6 +386,53 @@ CREATE POLICY "Users can delete own notifications" ON public.notifications FOR D
 CREATE POLICY "Authenticated can create notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (TRUE);
 CREATE INDEX idx_notifications_user ON public.notifications(user_id, is_read);
 
+-- Password reset notifications for admins
+CREATE OR REPLACE FUNCTION public.notify_admins_on_password_reset_request()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.notifications (user_id, title, message, type, link)
+  SELECT ur.user_id,
+         'Password Reset Request',
+         'A student requested a password reset. Student ID: ' || NEW.student_id,
+         'warning',
+         '/admin/settings'
+  FROM public.user_roles ur
+  WHERE ur.role = 'admin';
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER password_reset_requests_notify_admins
+  AFTER INSERT ON public.password_reset_requests
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_admins_on_password_reset_request();
+
+-- Storage bucket for profile pictures
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Users can upload own avatar" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Users can update own avatar" ON storage.objects
+FOR UPDATE TO authenticated
+USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text)
+WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Users can delete own avatar" ON storage.objects
+FOR DELETE TO authenticated
+USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Public can view avatars" ON storage.objects
+FOR SELECT USING (bucket_id = 'avatars');
+
 -- =============================================================================
 -- SEED DATA - School Classes
 -- =============================================================================
