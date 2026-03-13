@@ -311,7 +311,25 @@ CREATE POLICY "Parents can view linked results" ON public.results FOR SELECT TO 
 
 -- ATTENDANCE
 CREATE POLICY "Admins full access to attendance" ON public.attendance FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Instructors can manage attendance" ON public.attendance FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'instructor'));
+CREATE POLICY "Instructors can manage assigned attendance" ON public.attendance FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.students s
+      JOIN public.school_classes sc ON sc.name = s.class
+      WHERE s.student_id = attendance.student_id
+        AND sc.instructor_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.students s
+      JOIN public.school_classes sc ON sc.name = s.class
+      WHERE s.student_id = attendance.student_id
+        AND sc.instructor_id = auth.uid()
+    )
+  );
 CREATE POLICY "Students can view own attendance" ON public.attendance FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = attendance.student_id AND s.auth_user_id = auth.uid()));
 CREATE POLICY "Parents can view linked attendance" ON public.attendance FOR SELECT TO authenticated
