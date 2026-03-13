@@ -56,9 +56,7 @@ export const LearnerProfile: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-card rounded-2xl border border-border p-6 text-center">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mb-4">
-            <span className="text-2xl sm:text-3xl font-bold text-primary-foreground">{student.fullName[0]}</span>
-          </div>
+          <ProfileAvatarUploader sizeClass="w-20 h-20 sm:w-24 sm:h-24" className="mx-auto mb-4" />
           <h2 className="text-lg sm:text-xl font-bold text-foreground">{student.fullName}</h2>
           <p className="text-muted-foreground mt-1 text-sm break-all">{student.email}</p>
           <div className="mt-4 p-4 rounded-xl bg-muted/50"><p className="text-sm text-muted-foreground mb-1">{t.studentId}</p><p className="text-lg font-bold text-primary">{student.studentId}</p></div>

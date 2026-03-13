@@ -58,7 +58,7 @@ export const LearnerLayout: React.FC = () => {
         </nav>
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center"><span className="text-primary-foreground font-bold">{user?.name?.[0] || 'S'}</span></div>
+            <ProfileAvatarUploader sizeClass="w-10 h-10" />
             <div className="flex-1 min-w-0"><p className="font-medium text-foreground truncate">{user?.name || 'Student'}</p><p className="text-xs text-muted-foreground truncate">{user?.email}</p></div>
           </div>
           <div className="flex gap-2">
