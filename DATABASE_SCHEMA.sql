@@ -271,14 +271,39 @@ CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL TO authenti
 
 -- STUDENTS
 CREATE POLICY "Admins full access to students" ON public.students FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Instructors can view students" ON public.students FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'instructor'));
+CREATE POLICY "Instructors can view assigned students" ON public.students FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.school_classes sc
+      WHERE sc.name = students.class
+        AND sc.instructor_id = auth.uid()
+    )
+  );
 CREATE POLICY "Students can view own record" ON public.students FOR SELECT TO authenticated USING (auth_user_id = auth.uid());
 CREATE POLICY "Parents can view linked students" ON public.students FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.parent_students ps WHERE ps.parent_id = auth.uid() AND ps.student_id = students.student_id));
 
 -- RESULTS
 CREATE POLICY "Admins full access to results" ON public.results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Instructors can manage results" ON public.results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'instructor'));
+CREATE POLICY "Instructors can manage assigned results" ON public.results FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.students s
+      JOIN public.school_classes sc ON sc.name = s.class
+      WHERE s.student_id = results.student_id
+        AND sc.instructor_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.students s
+      JOIN public.school_classes sc ON sc.name = s.class
+      WHERE s.student_id = results.student_id
+        AND sc.instructor_id = auth.uid()
+    )
+  );
 CREATE POLICY "Students can view own results" ON public.results FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = results.student_id AND s.auth_user_id = auth.uid()));
 CREATE POLICY "Parents can view linked results" ON public.results FOR SELECT TO authenticated
@@ -286,7 +311,25 @@ CREATE POLICY "Parents can view linked results" ON public.results FOR SELECT TO 
 
 -- ATTENDANCE
 CREATE POLICY "Admins full access to attendance" ON public.attendance FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Instructors can manage attendance" ON public.attendance FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'instructor'));
+CREATE POLICY "Instructors can manage assigned attendance" ON public.attendance FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.students s
+      JOIN public.school_classes sc ON sc.name = s.class
+      WHERE s.student_id = attendance.student_id
+        AND sc.instructor_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.students s
+      JOIN public.school_classes sc ON sc.name = s.class
+      WHERE s.student_id = attendance.student_id
+        AND sc.instructor_id = auth.uid()
+    )
+  );
 CREATE POLICY "Students can view own attendance" ON public.attendance FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = attendance.student_id AND s.auth_user_id = auth.uid()));
 CREATE POLICY "Parents can view linked attendance" ON public.attendance FOR SELECT TO authenticated
@@ -342,6 +385,53 @@ CREATE POLICY "Users can update own notifications" ON public.notifications FOR U
 CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "Authenticated can create notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (TRUE);
 CREATE INDEX idx_notifications_user ON public.notifications(user_id, is_read);
+
+-- Password reset notifications for admins
+CREATE OR REPLACE FUNCTION public.notify_admins_on_password_reset_request()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.notifications (user_id, title, message, type, link)
+  SELECT ur.user_id,
+         'Password Reset Request',
+         'A student requested a password reset. Student ID: ' || NEW.student_id,
+         'warning',
+         '/admin/settings'
+  FROM public.user_roles ur
+  WHERE ur.role = 'admin';
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER password_reset_requests_notify_admins
+  AFTER INSERT ON public.password_reset_requests
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_admins_on_password_reset_request();
+
+-- Storage bucket for profile pictures
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Users can upload own avatar" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Users can update own avatar" ON storage.objects
+FOR UPDATE TO authenticated
+USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text)
+WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Users can delete own avatar" ON storage.objects
+FOR DELETE TO authenticated
+USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Public can view avatars" ON storage.objects
+FOR SELECT USING (bucket_id = 'avatars');
 
 -- =============================================================================
 -- SEED DATA - School Classes

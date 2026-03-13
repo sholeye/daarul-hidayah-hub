@@ -26,9 +26,10 @@ interface RegistrationModalProps {
   onClose: () => void;
   onSubmit: (student: Partial<Student>, credentials: { username: string; password: string }) => void;
   schoolClasses: { id: string; name: string }[];
+  existingCount: number;
 }
 
-const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, onSubmit, schoolClasses }) => {
+const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, onSubmit, schoolClasses, existingCount }) => {
   const [formData, setFormData] = useState({
     fullName: '', dateOfBirth: '', address: '', phone: '', origin: '',
     sex: 'male' as 'male' | 'female', guardianName: '', guardianPhone: '',
@@ -37,7 +38,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const studentId = generateStudentId(formData.fullName, Date.now());
+    const studentId = generateStudentId(formData.fullName, existingCount);
     const credentials = generateStudentCredentials(formData.fullName, studentId);
     onSubmit({
       studentId, fullName: formData.fullName, email: credentials.username,
@@ -304,7 +305,7 @@ export const StudentsPage: React.FC = () => {
         {filteredStudents.length === 0 && (<div className="p-12 text-center"><FiUser className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" /><p className="text-muted-foreground">No students found</p></div>)}
       </div>
 
-      <RegistrationModal isOpen={showRegistration} onClose={() => setShowRegistration(false)} onSubmit={handleRegister} schoolClasses={schoolClasses} />
+      <RegistrationModal isOpen={showRegistration} onClose={() => setShowRegistration(false)} onSubmit={handleRegister} schoolClasses={schoolClasses} existingCount={students.length} />
       <StudentDetailModal student={selectedStudent} onClose={() => setSelectedStudent(null)} />
       <EditModal student={editingStudent} onClose={() => setEditingStudent(null)} onSave={handleSaveEdit} schoolClasses={schoolClasses} />
       <CredentialsModal isOpen={!!newCredentials} onClose={() => { setNewCredentials(null); setNewStudentName(''); }} credentials={newCredentials} studentName={newStudentName} />

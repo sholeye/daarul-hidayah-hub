@@ -1,9 +1,10 @@
 /**
- * Instructor Attendance Page - Uses shared data (no mock imports)
+ * Instructor Attendance Page - restricted to admin-assigned classes
  */
 
 import React, { useState, useCallback } from 'react';
-import { FiCheckCircle, FiXCircle, FiCalendar, FiCheck } from 'react-icons/fi';
+import { FiCheckCircle, FiXCircle, FiCalendar, FiCheck, FiUsers } from 'react-icons/fi';
+import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,53 +16,86 @@ import { motion } from 'framer-motion';
 
 export const InstructorAttendance: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
+  const { user } = useAuth();
   const { students, attendance, schoolClasses, setAttendanceRecord, bulkSetAttendance, isLoading } = useSharedData();
+
+  const assignedClasses = schoolClasses.filter((schoolClass) => schoolClass.instructorId === user?.id);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedDate, setSelectedDate] = useState(today);
 
-  // Set default class when data loads
   React.useEffect(() => {
-    if (schoolClasses.length > 0 && !selectedClass) {
-      setSelectedClass(schoolClasses[0].name);
+    const hasSelectedClass = assignedClasses.some((schoolClass) => schoolClass.name === selectedClass);
+    if (!hasSelectedClass) {
+      setSelectedClass(assignedClasses[0]?.name || '');
     }
-  }, [schoolClasses, selectedClass]);
+  }, [assignedClasses, selectedClass]);
 
   const isFutureDate = selectedDate > today;
-  const classStudents = students.filter(s => s.class === selectedClass);
+  const classStudents = students.filter((student) => student.class === selectedClass);
 
   const getStatus = useCallback((studentId: string): 'present' | 'absent' | null => {
-    const record = attendance.find(a => a.studentId === studentId && a.date === selectedDate);
+    const record = attendance.find((item) => item.studentId === studentId && item.date === selectedDate);
     return record ? (record.status === 'present' ? 'present' : 'absent') : null;
   }, [attendance, selectedDate]);
 
   const toggleAttendance = useCallback((studentId: string, status: 'present' | 'absent') => {
-    if (isFutureDate) { toast.error('Cannot mark future dates'); return; }
+    if (isFutureDate) {
+      toast.error('Cannot mark future dates');
+      return;
+    }
+
     setAttendanceRecord({
-      id: Date.now().toString(), studentId, date: selectedDate, status,
+      id: Date.now().toString(),
+      studentId,
+      date: selectedDate,
+      status,
       checkInTime: status === 'present' ? new Date().toTimeString().slice(0, 5) : undefined,
     });
-    const student = classStudents.find(s => s.studentId === studentId);
+
+    const student = classStudents.find((item) => item.studentId === studentId);
     toast.success(`${student?.fullName} marked ${status}`, { duration: 1500 });
   }, [selectedDate, isFutureDate, classStudents, setAttendanceRecord]);
 
   const markAllPresent = () => {
-    if (isFutureDate) { toast.error('Cannot mark future dates'); return; }
-    const newRecords = classStudents.filter(s => !getStatus(s.studentId)).map(s => ({
-      id: Date.now().toString() + s.studentId, studentId: s.studentId, date: selectedDate,
-      status: 'present' as const, checkInTime: new Date().toTimeString().slice(0, 5),
-    }));
-    if (newRecords.length > 0) { bulkSetAttendance(newRecords); toast.success(`Marked ${newRecords.length} present`); }
+    if (isFutureDate) {
+      toast.error('Cannot mark future dates');
+      return;
+    }
+
+    const newRecords = classStudents
+      .filter((student) => !getStatus(student.studentId))
+      .map((student) => ({
+        id: `${Date.now()}-${student.studentId}`,
+        studentId: student.studentId,
+        date: selectedDate,
+        status: 'present' as const,
+        checkInTime: new Date().toTimeString().slice(0, 5),
+      }));
+
+    if (newRecords.length > 0) {
+      bulkSetAttendance(newRecords);
+      toast.success(`Marked ${newRecords.length} present`);
+    }
   };
 
-  const presentCount = classStudents.filter(s => getStatus(s.studentId) === 'present').length;
-  const absentCount = classStudents.filter(s => getStatus(s.studentId) === 'absent').length;
+  const presentCount = classStudents.filter((student) => getStatus(student.studentId) === 'present').length;
+  const absentCount = classStudents.filter((student) => getStatus(student.studentId) === 'absent').length;
 
   if (isLoading) return <InlineLoader />;
+
+  if (assignedClasses.length === 0) {
+    return (
+      <div className="text-center py-12 bg-card rounded-2xl border border-border">
+        <FiUsers className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">No classes assigned yet. Contact an administrator.</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">Mark Attendance</h1><p className="text-muted-foreground mt-1">Select a class and mark attendance</p></div>
+        <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">Mark Attendance</h1><p className="text-muted-foreground mt-1">Select an assigned class and mark attendance</p></div>
         {selectedDate === today && <Button variant="outline" onClick={markAllPresent}><FiCheck className="w-4 h-4 mr-2" />Mark All Present</Button>}
       </div>
 
@@ -72,10 +106,10 @@ export const InstructorAttendance: React.FC = () => {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="h-10 px-4 rounded-lg border border-input bg-background text-foreground">
-          {schoolClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+        <select value={selectedClass} onChange={(event) => setSelectedClass(event.target.value)} className="h-10 px-4 rounded-lg border border-input bg-background text-foreground">
+          {assignedClasses.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.name}>{schoolClass.name}</option>)}
         </select>
-        <div className="relative"><FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" /><Input type="date" value={selectedDate} max={today} onChange={(e) => setSelectedDate(e.target.value)} className="pl-12 w-full sm:w-48" /></div>
+        <div className="relative"><FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" /><Input type="date" value={selectedDate} max={today} onChange={(event) => setSelectedDate(event.target.value)} className="pl-12 w-full sm:w-48" /></div>
       </div>
 
       {isFutureDate && <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-center"><p className="text-destructive font-medium">Cannot mark attendance for future dates</p></div>}

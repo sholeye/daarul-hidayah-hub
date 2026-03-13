@@ -14,6 +14,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { NotificationBell } from '@/components/NotificationBell';
+import { ProfileAvatarUploader } from '@/components/ProfileAvatarUploader';
 
 export const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -76,9 +77,7 @@ export const AdminLayout: React.FC = () => {
 
           <div className="p-4 border-t border-border">
             <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-muted/50">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                <span className="text-primary-foreground font-bold">{user?.name?.[0]}</span>
-              </div>
+              <ProfileAvatarUploader sizeClass="w-10 h-10" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>

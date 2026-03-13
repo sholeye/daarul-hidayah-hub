@@ -1,13 +1,15 @@
 /**
- * Instructor Students - Read-only view of students for instructors
+ * Instructor Students - Read-only view restricted to assigned classes
  */
+
 import React, { useState } from 'react';
-import { FiSearch, FiEye, FiX, FiUser, FiPhone, FiCalendar, FiMapPin } from 'react-icons/fi';
+import { FiSearch, FiEye, FiX, FiUser, FiUsers } from 'react-icons/fi';
 import { Student } from '@/types';
+import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, formatCurrency } from '@/utils/helpers';
+import { formatDate } from '@/utils/helpers';
 import { InlineLoader } from '@/components/ui/page-loader';
 
 const StudentDetailModal: React.FC<{ student: Student | null; onClose: () => void }> = ({ student, onClose }) => {
@@ -44,7 +46,7 @@ const StudentDetailModal: React.FC<{ student: Student | null; onClose: () => voi
             <div><p className="text-muted-foreground">Enrolled</p><p className="font-medium text-foreground">{formatDate(student.enrollmentDate)}</p></div>
           </div>
           <p className="text-xs text-muted-foreground italic text-center pt-4 border-t border-border">
-            View only — contact an administrator to edit student records.
+            View only — editing student records is restricted to administrators.
           </p>
         </div>
       </div>
@@ -53,38 +55,52 @@ const StudentDetailModal: React.FC<{ student: Student | null; onClose: () => voi
 };
 
 export const InstructorStudents: React.FC = () => {
+  const { user } = useAuth();
   const { students, schoolClasses, isLoading } = useSharedData();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterClass, setFilterClass] = useState('all');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
-  const filteredStudents = students.filter(s => {
-    const matchesSearch = s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || s.studentId.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = filterClass === 'all' || s.class === filterClass;
+  const assignedClasses = schoolClasses.filter((schoolClass) => schoolClass.instructorId === user?.id);
+  const assignedClassNames = new Set(assignedClasses.map((schoolClass) => schoolClass.name));
+  const assignedStudents = students.filter((student) => assignedClassNames.has(student.class));
+
+  const filteredStudents = assignedStudents.filter((student) => {
+    const matchesSearch = student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || student.studentId.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesClass = filterClass === 'all' || student.class === filterClass;
     return matchesSearch && matchesClass;
   });
 
   if (isLoading) return <InlineLoader />;
 
+  if (assignedClasses.length === 0) {
+    return (
+      <div className="text-center py-12 bg-card rounded-2xl border border-border">
+        <FiUsers className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">No classes assigned yet. Contact an administrator.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Students</h1>
-        <p className="text-muted-foreground mt-1">View student information (read-only)</p>
+        <p className="text-muted-foreground mt-1">Read-only access to students in your assigned classes</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name or ID..." className="pl-12" />
+          <Input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search by name or ID..." className="pl-12" />
         </div>
         <select
           value={filterClass}
-          onChange={(e) => setFilterClass(e.target.value)}
+          onChange={(event) => setFilterClass(event.target.value)}
           className="h-10 px-4 rounded-lg border border-input bg-background text-foreground"
         >
-          <option value="all">All Classes</option>
-          {schoolClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+          <option value="all">All Assigned Classes</option>
+          {assignedClasses.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.name}>{schoolClass.name}</option>)}
         </select>
       </div>
 
@@ -101,7 +117,7 @@ export const InstructorStudents: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredStudents.map(student => (
+              {filteredStudents.map((student) => (
                 <tr key={student.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

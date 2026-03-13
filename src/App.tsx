@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/features/auth/AuthContext";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { ThemeProvider } from "@/features/app/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SharedDataProvider } from "@/contexts/SharedDataContext";
@@ -76,6 +77,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Landing />} />

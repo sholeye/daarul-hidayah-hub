@@ -1,10 +1,11 @@
 /**
- * Instructor Results Page - Uses shared data (no mock imports)
+ * Instructor Results Page - restricted to admin-assigned classes
  */
 
 import React, { useState } from 'react';
-import { FiFileText, FiSave } from 'react-icons/fi';
+import { FiFileText, FiSave, FiUsers } from 'react-icons/fi';
 import { Student } from '@/types';
+import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,11 @@ import { motion } from 'framer-motion';
 const SUBJECTS = ['Arabic Language', 'Islamic Studies', 'Quran Memorization', 'Hadith', 'Fiqh', 'English Language', 'Mathematics', 'IT/Computer'];
 
 export const InstructorResults: React.FC = () => {
+  const { user } = useAuth();
   const { students, results, schoolClasses, addOrUpdateResult, isLoading } = useSharedData();
+
+  const assignedClasses = schoolClasses.filter((schoolClass) => schoolClass.instructorId === user?.id);
+
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [scores, setScores] = useState<Record<string, number>>({});
@@ -25,46 +30,59 @@ export const InstructorResults: React.FC = () => {
   const [position, setPosition] = useState('1');
 
   React.useEffect(() => {
-    if (schoolClasses.length > 0 && !selectedClass) {
-      setSelectedClass(schoolClasses[0].name);
+    const hasSelectedClass = assignedClasses.some((schoolClass) => schoolClass.name === selectedClass);
+    if (!hasSelectedClass) {
+      setSelectedClass(assignedClasses[0]?.name || '');
+      setSelectedStudent(null);
     }
-  }, [schoolClasses, selectedClass]);
+  }, [assignedClasses, selectedClass]);
 
-  const classStudents = students.filter(s => s.class === selectedClass);
+  const classStudents = students.filter((student) => student.class === selectedClass);
 
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
-    const existingResult = results.find(r => r.studentId === student.studentId);
+    const existingResult = results.find((result) => result.studentId === student.studentId);
+
     if (existingResult) {
       const scoreMap: Record<string, number> = {};
-      existingResult.subjects.forEach(s => { scoreMap[s.subject] = s.score; });
+      existingResult.subjects.forEach((subject) => {
+        scoreMap[subject.subject] = subject.score;
+      });
       setScores(scoreMap);
       setTeacherRemarks(existingResult.teacherRemarks || '');
       setPosition(existingResult.position?.toString() || '1');
-    } else {
-      setScores({});
-      setTeacherRemarks('');
-      setPosition('1');
+      return;
     }
+
+    setScores({});
+    setTeacherRemarks('');
+    setPosition('1');
   };
 
   const handleSave = async () => {
     if (!selectedStudent) return;
-    const subjects = SUBJECTS.map(subject => {
+
+    const subjects = SUBJECTS.map((subject) => {
       const score = scores[subject] || 0;
       const grade = calculateGrade(score);
       return { subject, score, grade, remarks: getGradeRemarks(grade) };
     });
-    const totalScore = subjects.reduce((sum, s) => sum + s.score, 0);
+
+    const totalScore = subjects.reduce((sum, subject) => sum + subject.score, 0);
     const averageScore = totalScore / subjects.length;
 
     try {
       await addOrUpdateResult({
         id: Date.now().toString(),
         studentId: selectedStudent.studentId,
-        term: 'First Term', session: '2024/2025',
-        subjects, totalScore, averageScore,
-        position: parseInt(position), teacherRemarks, principalRemarks: '',
+        term: 'First Term',
+        session: '2024/2025',
+        subjects,
+        totalScore,
+        averageScore,
+        position: parseInt(position, 10),
+        teacherRemarks,
+        principalRemarks: '',
         createdAt: new Date().toISOString().split('T')[0],
       });
       toast.success('Result saved successfully!');
@@ -77,20 +95,29 @@ export const InstructorResults: React.FC = () => {
 
   if (isLoading) return <InlineLoader />;
 
+  if (assignedClasses.length === 0) {
+    return (
+      <div className="text-center py-12 bg-card rounded-2xl border border-border">
+        <FiUsers className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">No classes assigned yet. Contact an administrator.</p>
+      </div>
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-6">
-      <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">Enter Results</h1><p className="text-muted-foreground mt-1">Enter scores for students in your classes</p></div>
+      <div><h1 className="text-2xl sm:text-3xl font-bold text-foreground">Enter Results</h1><p className="text-muted-foreground mt-1">Enter scores for students in your assigned classes</p></div>
 
-      <select value={selectedClass} onChange={(e) => { setSelectedClass(e.target.value); setSelectedStudent(null); }} className="h-10 px-4 rounded-lg border border-input bg-background text-foreground">
-        {schoolClasses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+      <select value={selectedClass} onChange={(event) => { setSelectedClass(event.target.value); setSelectedStudent(null); }} className="h-10 px-4 rounded-lg border border-input bg-background text-foreground">
+        {assignedClasses.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.name}>{schoolClass.name}</option>)}
       </select>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card rounded-2xl border border-border p-6">
           <h3 className="font-semibold text-foreground mb-4">Students</h3>
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
-            {classStudents.map(student => {
-              const hasResult = results.some(r => r.studentId === student.studentId);
+            {classStudents.map((student) => {
+              const hasResult = results.some((result) => result.studentId === student.studentId);
               return (
                 <button key={student.id} onClick={() => handleSelectStudent(student)}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${selectedStudent?.id === student.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
@@ -114,18 +141,18 @@ export const InstructorResults: React.FC = () => {
                 <Button onClick={handleSave}><FiSave className="w-4 h-4 mr-2" />Save</Button>
               </div>
               <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                {SUBJECTS.map(subject => {
+                {SUBJECTS.map((subject) => {
                   const score = scores[subject] || 0;
                   const grade = calculateGrade(score);
                   return (
                     <div key={subject} className="flex items-center gap-4">
-                      <div className="flex-1"><label className="text-sm text-muted-foreground">{subject}</label><Input type="number" min="0" max="100" value={scores[subject] || ''} onChange={(e) => setScores({ ...scores, [subject]: parseInt(e.target.value) || 0 })} placeholder="0" /></div>
+                      <div className="flex-1"><label className="text-sm text-muted-foreground">{subject}</label><Input type="number" min="0" max="100" value={scores[subject] || ''} onChange={(event) => setScores({ ...scores, [subject]: parseInt(event.target.value, 10) || 0 })} placeholder="0" /></div>
                       <Badge variant={grade === 'A+' || grade === 'A' ? 'paid' : grade === 'F' ? 'absent' : 'present'}>{grade}</Badge>
                     </div>
                   );
                 })}
-                <div><label className="text-sm text-muted-foreground">Position in Class</label><Input type="number" min="1" value={position} onChange={(e) => setPosition(e.target.value)} /></div>
-                <div><label className="text-sm text-muted-foreground">Teacher's Remarks</label><textarea value={teacherRemarks} onChange={(e) => setTeacherRemarks(e.target.value)} className="w-full h-20 px-3 py-2 rounded-lg border border-input bg-background text-foreground resize-none" placeholder="Enter remarks..." /></div>
+                <div><label className="text-sm text-muted-foreground">Position in Class</label><Input type="number" min="1" value={position} onChange={(event) => setPosition(event.target.value)} /></div>
+                <div><label className="text-sm text-muted-foreground">Teacher's Remarks</label><textarea value={teacherRemarks} onChange={(event) => setTeacherRemarks(event.target.value)} className="w-full h-20 px-3 py-2 rounded-lg border border-input bg-background text-foreground resize-none" placeholder="Enter remarks..." /></div>
               </div>
             </>
           ) : (
