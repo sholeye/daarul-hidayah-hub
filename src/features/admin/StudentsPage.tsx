@@ -26,9 +26,10 @@ interface RegistrationModalProps {
   onClose: () => void;
   onSubmit: (student: Partial<Student>, credentials: { username: string; password: string }) => void;
   schoolClasses: { id: string; name: string }[];
+  existingCount: number;
 }
 
-const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, onSubmit, schoolClasses }) => {
+const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose, onSubmit, schoolClasses, existingCount }) => {
   const [formData, setFormData] = useState({
     fullName: '', dateOfBirth: '', address: '', phone: '', origin: '',
     sex: 'male' as 'male' | 'female', guardianName: '', guardianPhone: '',
