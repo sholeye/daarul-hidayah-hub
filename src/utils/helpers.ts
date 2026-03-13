@@ -1,9 +1,13 @@
 import QRCode from 'qrcode';
 
 export const generateStudentId = (firstName: string, existingCount: number): string => {
-  const cleanName = firstName.replace(/[^a-zA-Z]/g, '');
-  const paddedNumber = String(existingCount + 1).padStart(3, '0');
-  return `${cleanName}_${paddedNumber}`;
+  const prefix = firstName
+    .split(' ')[0]
+    .toLowerCase()
+    .replace(/[^a-z]/g, '')
+    .slice(0, 3) || 'std';
+  const paddedNumber = String((existingCount % 10000) + 1).padStart(4, '0');
+  return `${prefix}${paddedNumber}`;
 };
 
 export const generateQRCode = async (studentId: string): Promise<string> => {

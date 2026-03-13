@@ -173,14 +173,28 @@ export const useRequireRole = (allowedRoles: UserRole[]) => {
  * Password: DH- + 6 random alphanumeric chars (e.g., DH-x7K2mQ)
  */
 export const generateStudentCredentials = (fullName: string, studentId: string) => {
-  const firstName = fullName.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '').slice(0, 10);
-  const counterMatch = studentId.match(/(\d+)/);
-  const counter = counterMatch ? counterMatch[1].padStart(2, '0') : '01';
-  const username = `${firstName}${counter}@dh.edu`;
+  const prefix = fullName
+    .trim()
+    .split(' ')[0]
+    .toLowerCase()
+    .replace(/[^a-z]/g, '')
+    .slice(0, 3) || 'std';
+
+  const numericPart = studentId.replace(/\D/g, '').slice(-4).padStart(4, '0');
+  const username = `${prefix}${numericPart}@dh.edu`;
 
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  let pwd = 'DH-';
-  for (let i = 0; i < 6; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
-  
-  return { username, password: pwd };
+  const seed = `${studentId}:${fullName.toLowerCase()}`;
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) >>> 0;
+  }
+
+  let token = '';
+  for (let i = 0; i < 6; i += 1) {
+    hash = (hash * 1664525 + 1013904223) >>> 0;
+    token += chars[hash % chars.length];
+  }
+
+  return { username, password: `DH-${token}` };
 };

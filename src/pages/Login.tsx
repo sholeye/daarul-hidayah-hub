@@ -42,6 +42,13 @@ const Login: React.FC = () => {
     return true;
   };
 
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    const fallbackPath = getRoleBasedPath(user.role);
+    const targetPath = canAccessPath(user.role, from) ? from! : fallbackPath;
+    navigate(targetPath, { replace: true });
+  }, [isAuthenticated, user, from, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
