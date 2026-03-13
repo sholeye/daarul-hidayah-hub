@@ -54,7 +54,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     setIsLoading(false);
   }, []);
-...
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setTimeout(() => fetchUserWithRole(session.user), 0);
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUserWithRole(session.user);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchUserWithRole]);
+
+  const refreshUser = useCallback(async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('Failed to refresh user:', error.message);
+      return;
+    }
+    if (data.user) await fetchUserWithRole(data.user);
+    else setUser(null);
+  }, [fetchUserWithRole]);
+
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
