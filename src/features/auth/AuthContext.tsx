@@ -34,68 +34,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUserWithRole = useCallback(async (sessionUser: any) => {
-    const { data: roleRows, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', sessionUser.id);
+    const [{ data: roleRows, error: roleError }, { data: profile, error: profileError }] = await Promise.all([
+      supabase.from('user_roles').select('role').eq('user_id', sessionUser.id),
+      supabase.from('profiles').select('full_name, email, avatar_url').eq('id', sessionUser.id).maybeSingle(),
+    ]);
 
-    if (error) console.error('Role lookup failed:', error.message);
+    if (roleError) console.error('Role lookup failed:', roleError.message);
+    if (profileError) console.error('Profile lookup failed:', profileError.message);
 
     const role = pickPrimaryRole(roleRows, sessionUser.user_metadata?.role);
-    const fullName = sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User';
+    const fullName = profile?.full_name || sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User';
 
     setUser({
       id: sessionUser.id,
-      email: sessionUser.email || '',
+      email: profile?.email || sessionUser.email || '',
       name: fullName,
       role,
+      avatar: profile?.avatar_url || undefined,
     });
     setIsLoading(false);
   }, []);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setTimeout(() => fetchUserWithRole(session.user), 0);
-      } else {
-        setUser(null);
-        setIsLoading(false);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchUserWithRole(session.user);
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const refreshUser = useCallback(async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) { console.error('Failed to refresh user:', error.message); return; }
-    if (data.user) await fetchUserWithRole(data.user);
-    else setUser(null);
-  }, [fetchUserWithRole]);
-
+...
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password: password.trim(),
     });
+
     if (error) return { success: false, message: error.message };
+
     if (data.user) {
-      // Fetch role immediately so caller can redirect
-      const { data: roleRows } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', data.user.id);
+      const [{ data: roleRows }, { data: profile }] = await Promise.all([
+        supabase.from('user_roles').select('role').eq('user_id', data.user.id),
+        supabase.from('profiles').select('full_name, email, avatar_url').eq('id', data.user.id).maybeSingle(),
+      ]);
+
       const role = pickPrimaryRole(roleRows, data.user.user_metadata?.role);
+
+      setUser({
+        id: data.user.id,
+        email: profile?.email || data.user.email || '',
+        name: profile?.full_name || data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
+        role,
+        avatar: profile?.avatar_url || undefined,
+      });
+      setIsLoading(false);
+
       return { success: true, message: 'Login successful!', role, userId: data.user.id };
     }
+
     return { success: false, message: 'Login failed. Please try again.' };
   }, []);
 

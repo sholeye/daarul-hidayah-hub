@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn, FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
@@ -12,7 +12,7 @@ import { motion } from 'framer-motion';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   const { t, isRTL } = useLanguage();
 
   const [email, setEmail] = useState('');
