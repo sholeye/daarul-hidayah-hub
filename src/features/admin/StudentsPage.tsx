@@ -305,7 +305,7 @@ export const StudentsPage: React.FC = () => {
         {filteredStudents.length === 0 && (<div className="p-12 text-center"><FiUser className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" /><p className="text-muted-foreground">No students found</p></div>)}
       </div>
 
-      <RegistrationModal isOpen={showRegistration} onClose={() => setShowRegistration(false)} onSubmit={handleRegister} schoolClasses={schoolClasses} />
+      <RegistrationModal isOpen={showRegistration} onClose={() => setShowRegistration(false)} onSubmit={handleRegister} schoolClasses={schoolClasses} existingCount={students.length} />
       <StudentDetailModal student={selectedStudent} onClose={() => setSelectedStudent(null)} />
       <EditModal student={editingStudent} onClose={() => setEditingStudent(null)} onSave={handleSaveEdit} schoolClasses={schoolClasses} />
       <CredentialsModal isOpen={!!newCredentials} onClose={() => { setNewCredentials(null); setNewStudentName(''); }} credentials={newCredentials} studentName={newStudentName} />
