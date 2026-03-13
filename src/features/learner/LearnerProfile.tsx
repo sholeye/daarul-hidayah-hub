@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { formatDate } from '@/utils/helpers';
 import { toast } from 'sonner';
 import { InlineLoader } from '@/components/ui/page-loader';
+import { ProfileAvatarUploader } from '@/components/ProfileAvatarUploader';
 
 interface InfoRowProps { icon: React.ElementType; label: string; value: string | undefined; }
 const InfoRow: React.FC<InfoRowProps> = ({ icon: Icon, label, value }) => (

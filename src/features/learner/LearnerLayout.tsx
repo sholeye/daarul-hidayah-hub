@@ -10,6 +10,7 @@ import { useTheme } from '@/features/app/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { NotificationBell } from '@/components/NotificationBell';
+import { ProfileAvatarUploader } from '@/components/ProfileAvatarUploader';
 
 export const LearnerLayout: React.FC = () => {
   const { user, logout } = useAuth();
