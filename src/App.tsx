@@ -39,6 +39,7 @@ import { AnnouncementsPage } from "@/features/admin/AnnouncementsPage";
 import { SettingsPage } from "@/features/admin/SettingsPage";
 import { AdminQuizPage } from "@/features/admin/AdminQuizPage";
 import { AdminBlogPage } from "@/features/admin/AdminBlogPage";
+import { AssignmentsPage } from "@/features/admin/AssignmentsPage";
 
 // Learner
 import { LearnerLayout } from "@/features/learner/LearnerLayout";
