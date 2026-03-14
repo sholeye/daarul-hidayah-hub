@@ -39,6 +39,7 @@ import { AnnouncementsPage } from "@/features/admin/AnnouncementsPage";
 import { SettingsPage } from "@/features/admin/SettingsPage";
 import { AdminQuizPage } from "@/features/admin/AdminQuizPage";
 import { AdminBlogPage } from "@/features/admin/AdminBlogPage";
+import { AssignmentsPage } from "@/features/admin/AssignmentsPage";
 
 // Learner
 import { LearnerLayout } from "@/features/learner/LearnerLayout";
@@ -106,6 +107,7 @@ const App = () => (
                 <Route path="quiz" element={<AdminQuizPage />} />
                 <Route path="announcements" element={<AnnouncementsPage />} />
                 <Route path="blog" element={<AdminBlogPage />} />
+                <Route path="assignments" element={<AssignmentsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
 
