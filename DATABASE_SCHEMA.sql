@@ -1,9 +1,9 @@
 -- =============================================================================
--- DAARUL HIDAYAH - COMPLETE DATABASE SCHEMA
+-- DAARUL HIDAYAH - COMPLETE DATABASE SCHEMA (Fresh Install)
 -- =============================================================================
--- Paste this into your Supabase SQL Editor and run it.
+-- Run this ONCE in your Supabase SQL Editor.
 -- IMPORTANT: In Supabase Dashboard > Auth > Settings:
---   1. Set "Confirm email" to OFF (needed for student auto-generated emails)
+--   1. Set "Confirm email" to OFF
 --   2. Set Site URL to your deployed app URL
 -- =============================================================================
 
@@ -14,7 +14,7 @@ CREATE TYPE public.attendance_status AS ENUM ('present', 'absent', 'late', 'excu
 CREATE TYPE public.announcement_category AS ENUM ('general', 'academic', 'event', 'urgent');
 CREATE TYPE public.payment_status AS ENUM ('completed', 'pending', 'failed');
 
--- 2. PROFILES TABLE (linked to auth.users)
+-- 2. PROFILES TABLE
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- 3. USER ROLES TABLE (separate from profiles for security)
+-- 3. USER ROLES TABLE
 CREATE TABLE public.user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
@@ -151,7 +151,7 @@ CREATE TABLE public.blog_likes (
   UNIQUE(post_id, user_id)
 );
 
--- 12. PASSWORD RESET REQUESTS (student -> admin)
+-- 12. PASSWORD RESET REQUESTS
 CREATE TABLE public.password_reset_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id TEXT NOT NULL REFERENCES public.students(student_id) ON DELETE CASCADE,
@@ -170,42 +170,43 @@ CREATE TABLE public.parent_students (
   UNIQUE(parent_id, student_id)
 );
 
+-- 14. NOTIFICATIONS TABLE
+CREATE TABLE public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('info', 'success', 'warning', 'error')),
+  is_read BOOLEAN DEFAULT FALSE,
+  link TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
 -- =============================================================================
--- SECURITY DEFINER FUNCTIONS
+-- SECURITY DEFINER FUNCTIONS (prevents recursive RLS)
 -- =============================================================================
 
--- Role check function (avoids recursive RLS)
 CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
 RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
+    SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role = _role
   )
 $$;
 
--- Get user role function
 CREATE OR REPLACE FUNCTION public.get_user_role(_user_id UUID)
 RETURNS app_role
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 AS $$
-  SELECT role FROM public.user_roles
-  WHERE user_id = _user_id
-  LIMIT 1
+  SELECT role FROM public.user_roles WHERE user_id = _user_id LIMIT 1
 $$;
 
 -- =============================================================================
 -- TRIGGERS
 -- =============================================================================
 
--- Auto-create profile on signup
+-- Auto-create profile + role on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -215,7 +216,6 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
     NEW.email
   );
-  -- Auto-assign role from metadata if provided
   IF NEW.raw_user_meta_data->>'role' IS NOT NULL THEN
     INSERT INTO public.user_roles (user_id, role)
     VALUES (NEW.id, (NEW.raw_user_meta_data->>'role')::app_role);
@@ -231,10 +231,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 -- Auto-update updated_at
 CREATE OR REPLACE FUNCTION public.update_updated_at()
 RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_students_updated_at BEFORE UPDATE ON public.students FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
@@ -242,6 +239,27 @@ CREATE TRIGGER update_results_updated_at BEFORE UPDATE ON public.results FOR EAC
 CREATE TRIGGER update_blog_posts_updated_at BEFORE UPDATE ON public.blog_posts FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 CREATE TRIGGER update_announcements_updated_at BEFORE UPDATE ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+-- Notify admins on password reset request
+CREATE OR REPLACE FUNCTION public.notify_admins_on_password_reset_request()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.notifications (user_id, title, message, type, link)
+  SELECT ur.user_id,
+         'Password Reset Request 🔑',
+         'Student ' || NEW.student_id || ' requested a password reset.',
+         'warning',
+         '/admin/assignments'
+  FROM public.user_roles ur WHERE ur.role = 'admin';
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER password_reset_requests_notify_admins
+  AFTER INSERT ON public.password_reset_requests
+  FOR EACH ROW EXECUTE FUNCTION public.notify_admins_on_password_reset_request();
 
 -- =============================================================================
 -- ROW LEVEL SECURITY
@@ -259,26 +277,23 @@ ALTER TABLE public.blog_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.school_classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.password_reset_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.parent_students ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
--- PROFILES
+-- PROFILES: users see own + admins see all + INSERT for trigger
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT TO authenticated USING (id = auth.uid());
 CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (id = auth.uid());
+CREATE POLICY "System can insert profiles" ON public.profiles FOR INSERT WITH CHECK (TRUE);
 
 -- USER ROLES
 CREATE POLICY "Users can view own role" ON public.user_roles FOR SELECT TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "System can insert roles" ON public.user_roles FOR INSERT WITH CHECK (TRUE);
 
 -- STUDENTS
 CREATE POLICY "Admins full access to students" ON public.students FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Instructors can view assigned students" ON public.students FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.school_classes sc
-      WHERE sc.name = students.class
-        AND sc.instructor_id = auth.uid()
-    )
-  );
+  USING (EXISTS (SELECT 1 FROM public.school_classes sc WHERE sc.name = students.class AND sc.instructor_id = auth.uid()));
 CREATE POLICY "Students can view own record" ON public.students FOR SELECT TO authenticated USING (auth_user_id = auth.uid());
 CREATE POLICY "Parents can view linked students" ON public.students FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.parent_students ps WHERE ps.parent_id = auth.uid() AND ps.student_id = students.student_id));
@@ -286,24 +301,8 @@ CREATE POLICY "Parents can view linked students" ON public.students FOR SELECT T
 -- RESULTS
 CREATE POLICY "Admins full access to results" ON public.results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Instructors can manage assigned results" ON public.results FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM public.students s
-      JOIN public.school_classes sc ON sc.name = s.class
-      WHERE s.student_id = results.student_id
-        AND sc.instructor_id = auth.uid()
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1
-      FROM public.students s
-      JOIN public.school_classes sc ON sc.name = s.class
-      WHERE s.student_id = results.student_id
-        AND sc.instructor_id = auth.uid()
-    )
-  );
+  USING (EXISTS (SELECT 1 FROM public.students s JOIN public.school_classes sc ON sc.name = s.class WHERE s.student_id = results.student_id AND sc.instructor_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.students s JOIN public.school_classes sc ON sc.name = s.class WHERE s.student_id = results.student_id AND sc.instructor_id = auth.uid()));
 CREATE POLICY "Students can view own results" ON public.results FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = results.student_id AND s.auth_user_id = auth.uid()));
 CREATE POLICY "Parents can view linked results" ON public.results FOR SELECT TO authenticated
@@ -312,24 +311,8 @@ CREATE POLICY "Parents can view linked results" ON public.results FOR SELECT TO 
 -- ATTENDANCE
 CREATE POLICY "Admins full access to attendance" ON public.attendance FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Instructors can manage assigned attendance" ON public.attendance FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM public.students s
-      JOIN public.school_classes sc ON sc.name = s.class
-      WHERE s.student_id = attendance.student_id
-        AND sc.instructor_id = auth.uid()
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1
-      FROM public.students s
-      JOIN public.school_classes sc ON sc.name = s.class
-      WHERE s.student_id = attendance.student_id
-        AND sc.instructor_id = auth.uid()
-    )
-  );
+  USING (EXISTS (SELECT 1 FROM public.students s JOIN public.school_classes sc ON sc.name = s.class WHERE s.student_id = attendance.student_id AND sc.instructor_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.students s JOIN public.school_classes sc ON sc.name = s.class WHERE s.student_id = attendance.student_id AND sc.instructor_id = auth.uid()));
 CREATE POLICY "Students can view own attendance" ON public.attendance FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = attendance.student_id AND s.auth_user_id = auth.uid()));
 CREATE POLICY "Parents can view linked attendance" ON public.attendance FOR SELECT TO authenticated
@@ -344,6 +327,7 @@ CREATE POLICY "Parents can view linked payments" ON public.payments FOR SELECT T
 
 -- ANNOUNCEMENTS
 CREATE POLICY "Anyone authenticated can view active announcements" ON public.announcements FOR SELECT TO authenticated USING (is_active = TRUE);
+CREATE POLICY "Public can view active announcements" ON public.announcements FOR SELECT USING (is_active = TRUE);
 CREATE POLICY "Admins full access to announcements" ON public.announcements FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 
 -- BLOG POSTS
@@ -361,6 +345,8 @@ CREATE POLICY "Admins can manage classes" ON public.school_classes FOR ALL TO au
 
 -- PASSWORD RESET REQUESTS
 CREATE POLICY "Students can create requests" ON public.password_reset_requests FOR INSERT TO authenticated WITH CHECK (TRUE);
+CREATE POLICY "Students can view own requests" ON public.password_reset_requests FOR SELECT TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = password_reset_requests.student_id AND s.auth_user_id = auth.uid()));
 CREATE POLICY "Admins can manage requests" ON public.password_reset_requests FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 
 -- PARENT STUDENTS
@@ -368,74 +354,43 @@ CREATE POLICY "Admins can manage parent-student links" ON public.parent_students
 CREATE POLICY "Parents can view own links" ON public.parent_students FOR SELECT TO authenticated USING (parent_id = auth.uid());
 
 -- NOTIFICATIONS
-CREATE TABLE public.notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  message TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('info', 'success', 'warning', 'error')),
-  is_read BOOLEAN DEFAULT FALSE,
-  link TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
-);
-
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "Authenticated can create notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (TRUE);
-CREATE INDEX idx_notifications_user ON public.notifications(user_id, is_read);
 
--- Password reset notifications for admins
-CREATE OR REPLACE FUNCTION public.notify_admins_on_password_reset_request()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  INSERT INTO public.notifications (user_id, title, message, type, link)
-  SELECT ur.user_id,
-         'Password Reset Request',
-         'A student requested a password reset. Student ID: ' || NEW.student_id,
-         'warning',
-         '/admin/settings'
-  FROM public.user_roles ur
-  WHERE ur.role = 'admin';
+-- =============================================================================
+-- STORAGE - Avatar bucket
+-- =============================================================================
 
-  RETURN NEW;
-END;
-$$;
+INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true) ON CONFLICT (id) DO NOTHING;
 
-CREATE TRIGGER password_reset_requests_notify_admins
-  AFTER INSERT ON public.password_reset_requests
-  FOR EACH ROW
-  EXECUTE FUNCTION public.notify_admins_on_password_reset_request();
+CREATE POLICY "Users can upload own avatar" ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Users can update own avatar" ON storage.objects FOR UPDATE TO authenticated
+  USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text)
+  WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Users can delete own avatar" ON storage.objects FOR DELETE TO authenticated
+  USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Public can view avatars" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
 
--- Storage bucket for profile pictures
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('avatars', 'avatars', true)
-ON CONFLICT (id) DO NOTHING;
+-- =============================================================================
+-- REALTIME - Enable for key tables
+-- =============================================================================
 
-CREATE POLICY "Users can upload own avatar" ON storage.objects
-FOR INSERT TO authenticated
-WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
-
-CREATE POLICY "Users can update own avatar" ON storage.objects
-FOR UPDATE TO authenticated
-USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text)
-WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
-
-CREATE POLICY "Users can delete own avatar" ON storage.objects
-FOR DELETE TO authenticated
-USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
-
-CREATE POLICY "Public can view avatars" ON storage.objects
-FOR SELECT USING (bucket_id = 'avatars');
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.announcements;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.students;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.attendance;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.payments;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.results;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.blog_posts;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.blog_likes;
 
 -- =============================================================================
 -- SEED DATA - School Classes
 -- =============================================================================
+
 INSERT INTO public.school_classes (name, name_arabic, level) VALUES
   ('Safu Awwal', 'الصف الأول', 'preparatory'),
   ('Safu Thaniy', 'الصف الثاني', 'preparatory'),
@@ -445,8 +400,9 @@ INSERT INTO public.school_classes (name, name_arabic, level) VALUES
   ('Thalith Ibtida''i', 'الثالث ابتدائي', 'primary');
 
 -- =============================================================================
--- INDEXES FOR PERFORMANCE
+-- PERFORMANCE INDEXES
 -- =============================================================================
+
 CREATE INDEX idx_students_student_id ON public.students(student_id);
 CREATE INDEX idx_students_class ON public.students(class);
 CREATE INDEX idx_students_auth_user ON public.students(auth_user_id);
@@ -456,3 +412,4 @@ CREATE INDEX idx_payments_student ON public.payments(student_id);
 CREATE INDEX idx_blog_likes_post ON public.blog_likes(post_id);
 CREATE INDEX idx_parent_students_parent ON public.parent_students(parent_id);
 CREATE INDEX idx_user_roles_user ON public.user_roles(user_id);
+CREATE INDEX idx_notifications_user ON public.notifications(user_id, is_read);

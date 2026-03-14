@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FiHome, FiUsers, FiCalendar, FiDollarSign, FiFileText, 
-  FiBell, FiSettings, FiLogOut, FiMenu, FiX, FiMoon, FiSun, FiAward 
+  FiBell, FiSettings, FiLogOut, FiMenu, FiX, FiMoon, FiSun, FiAward, FiLink 
 } from 'react-icons/fi';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/features/app/ThemeContext';
@@ -34,6 +34,7 @@ export const AdminLayout: React.FC = () => {
     { icon: FiAward, label: t.quiz, path: '/admin/quiz' },
     { icon: FiBell, label: t.announcements, path: '/admin/announcements' },
     { icon: FiFileText, label: t.blog, path: '/admin/blog' },
+    { icon: FiLink, label: 'Assignments', path: '/admin/assignments' },
     { icon: FiSettings, label: t.settings, path: '/admin/settings' },
   ];
 
