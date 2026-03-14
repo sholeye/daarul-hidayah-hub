@@ -107,6 +107,7 @@ const App = () => (
                 <Route path="quiz" element={<AdminQuizPage />} />
                 <Route path="announcements" element={<AnnouncementsPage />} />
                 <Route path="blog" element={<AdminBlogPage />} />
+                <Route path="assignments" element={<AssignmentsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
 
