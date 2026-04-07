@@ -183,6 +183,94 @@ CREATE TABLE public.notifications (
 );
 
 -- =============================================================================
+-- 15. QUIZ SYSTEM TABLES
+-- =============================================================================
+
+-- Quiz Houses (the 4 houses)
+CREATE TABLE public.quiz_houses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  name_arabic TEXT NOT NULL,
+  color TEXT NOT NULL,
+  total_score INTEGER DEFAULT 0,
+  competitions_won INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Quiz Questions (question bank managed by admin)
+CREATE TABLE public.quiz_questions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  question TEXT NOT NULL,
+  question_arabic TEXT,
+  type TEXT NOT NULL CHECK (type IN ('mcq', 'true_false', 'short_answer', 'essay')),
+  options JSONB DEFAULT '[]',
+  correct_answer TEXT NOT NULL DEFAULT '',
+  points INTEGER DEFAULT 10,
+  time_limit INTEGER DEFAULT 30,
+  max_points INTEGER,
+  rubric TEXT,
+  rubric_arabic TEXT,
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Quiz Competitions
+CREATE TABLE public.quiz_competitions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  scheduled_date DATE NOT NULL,
+  scheduled_time TEXT NOT NULL DEFAULT '10:00',
+  status TEXT NOT NULL DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'live', 'completed', 'grading')),
+  question_ids UUID[] DEFAULT '{}',
+  reps_per_house INTEGER DEFAULT 3,
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Quiz Representatives (assigned to a competition)
+CREATE TABLE public.quiz_representatives (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  competition_id UUID NOT NULL REFERENCES public.quiz_competitions(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  house TEXT NOT NULL,
+  login_code TEXT NOT NULL,
+  has_completed BOOLEAN DEFAULT FALSE,
+  score INTEGER DEFAULT 0,
+  assigned_question_ids UUID[] DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  UNIQUE(competition_id, login_code)
+);
+
+-- Quiz Answers (submitted by representatives)
+CREATE TABLE public.quiz_answers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  competition_id UUID NOT NULL REFERENCES public.quiz_competitions(id) ON DELETE CASCADE,
+  representative_id UUID NOT NULL REFERENCES public.quiz_representatives(id) ON DELETE CASCADE,
+  question_id UUID NOT NULL REFERENCES public.quiz_questions(id) ON DELETE CASCADE,
+  answer TEXT NOT NULL DEFAULT '',
+  is_correct BOOLEAN DEFAULT FALSE,
+  points_earned INTEGER DEFAULT 0,
+  time_spent INTEGER DEFAULT 0,
+  pending_grade BOOLEAN DEFAULT FALSE,
+  graded_by UUID REFERENCES auth.users(id),
+  graded_at TIMESTAMPTZ,
+  feedback TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Quiz Competition Results (per-house scores after completion)
+CREATE TABLE public.quiz_competition_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  competition_id UUID NOT NULL REFERENCES public.quiz_competitions(id) ON DELETE CASCADE,
+  house_scores JSONB NOT NULL DEFAULT '{}',
+  winning_house TEXT NOT NULL,
+  top_student_name TEXT,
+  top_student_house TEXT,
+  top_student_score INTEGER DEFAULT 0,
+  completed_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- =============================================================================
 -- SECURITY DEFINER FUNCTIONS (prevents recursive RLS)
 -- =============================================================================
 
@@ -278,8 +366,14 @@ ALTER TABLE public.school_classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.password_reset_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.parent_students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_houses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_competitions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_representatives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_answers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_competition_results ENABLE ROW LEVEL SECURITY;
 
--- PROFILES: users see own + admins see all + INSERT for trigger
+-- PROFILES
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT TO authenticated USING (id = auth.uid());
 CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (id = auth.uid());
@@ -359,6 +453,31 @@ CREATE POLICY "Users can update own notifications" ON public.notifications FOR U
 CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "Authenticated can create notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (TRUE);
 
+-- QUIZ HOUSES (public read, admin write)
+CREATE POLICY "Anyone can view quiz houses" ON public.quiz_houses FOR SELECT USING (TRUE);
+CREATE POLICY "Admins can manage quiz houses" ON public.quiz_houses FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+
+-- QUIZ QUESTIONS (admin full, public read for active competitions)
+CREATE POLICY "Admins full access to quiz questions" ON public.quiz_questions FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Public can view quiz questions" ON public.quiz_questions FOR SELECT USING (TRUE);
+
+-- QUIZ COMPETITIONS
+CREATE POLICY "Anyone can view competitions" ON public.quiz_competitions FOR SELECT USING (TRUE);
+CREATE POLICY "Admins can manage competitions" ON public.quiz_competitions FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+
+-- QUIZ REPRESENTATIVES
+CREATE POLICY "Anyone can view representatives" ON public.quiz_representatives FOR SELECT USING (TRUE);
+CREATE POLICY "Admins can manage representatives" ON public.quiz_representatives FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+
+-- QUIZ ANSWERS
+CREATE POLICY "Anyone can insert quiz answers" ON public.quiz_answers FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Anyone can view quiz answers" ON public.quiz_answers FOR SELECT USING (TRUE);
+CREATE POLICY "Admins can manage quiz answers" ON public.quiz_answers FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+
+-- QUIZ COMPETITION RESULTS
+CREATE POLICY "Anyone can view competition results" ON public.quiz_competition_results FOR SELECT USING (TRUE);
+CREATE POLICY "Admins can manage competition results" ON public.quiz_competition_results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+
 -- =============================================================================
 -- STORAGE - Avatar bucket
 -- =============================================================================
@@ -386,6 +505,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.payments;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.results;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.blog_posts;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.blog_likes;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_houses;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_competitions;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_representatives;
 
 -- =============================================================================
 -- SEED DATA - School Classes
@@ -398,6 +520,13 @@ INSERT INTO public.school_classes (name, name_arabic, level) VALUES
   ('Awwal Ibtida''i', 'الأول ابتدائي', 'primary'),
   ('Thaniy Ibtida''i', 'الثاني ابتدائي', 'primary'),
   ('Thalith Ibtida''i', 'الثالث ابتدائي', 'primary');
+
+-- SEED DATA - Quiz Houses
+INSERT INTO public.quiz_houses (name, name_arabic, color) VALUES
+  ('AbuBakr', 'أبو بكر', 'bg-emerald-500'),
+  ('Umar', 'عمر', 'bg-blue-500'),
+  ('Uthman', 'عثمان', 'bg-amber-500'),
+  ('Ali', 'علي', 'bg-rose-500');
 
 -- =============================================================================
 -- PERFORMANCE INDEXES
@@ -413,3 +542,14 @@ CREATE INDEX idx_blog_likes_post ON public.blog_likes(post_id);
 CREATE INDEX idx_parent_students_parent ON public.parent_students(parent_id);
 CREATE INDEX idx_user_roles_user ON public.user_roles(user_id);
 CREATE INDEX idx_notifications_user ON public.notifications(user_id, is_read);
+CREATE INDEX idx_quiz_reps_competition ON public.quiz_representatives(competition_id);
+CREATE INDEX idx_quiz_answers_competition ON public.quiz_answers(competition_id);
+
+-- =============================================================================
+-- ADMIN SETUP QUERIES (run after first signup)
+-- =============================================================================
+-- 1. Sign up as a staff member via the app
+-- 2. Then run:
+--    UPDATE public.user_roles SET role = 'admin' WHERE user_id = (SELECT id FROM auth.users WHERE email = 'YOUR_EMAIL');
+--    If no role row exists yet:
+--    INSERT INTO public.user_roles (user_id, role) VALUES ((SELECT id FROM auth.users WHERE email = 'YOUR_EMAIL'), 'admin');
