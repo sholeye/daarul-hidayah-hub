@@ -1,7 +1,6 @@
 /**
- * SharedDataContext - Real Supabase data store
+ * SharedDataContext - Real Supabase data store with Realtime subscriptions
  * Refetches on auth changes to prevent stale state.
- * Creates notifications on key events.
  */
 
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useRef } from 'react';
@@ -85,6 +84,7 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
 
   useEffect(() => { refreshAll(); }, [refreshAll]);
 
+  // Re-fetch on auth changes
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
@@ -93,6 +93,37 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
     });
     return () => subscription.unsubscribe();
   }, [refreshAll]);
+
+  // ==========================================================================
+  // REALTIME SUBSCRIPTIONS - listen to changes and update state instantly
+  // ==========================================================================
+  useEffect(() => {
+    const channel = supabase.channel('shared-data-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+        db.fetchStudents().catch(() => []).then(setStudents);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, () => {
+        db.fetchAttendance().catch(() => []).then(setAttendance);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
+        db.fetchPayments().catch(() => []).then(setPayments);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'results' }, () => {
+        db.fetchResults().catch(() => []).then(setResults);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
+        db.fetchAnnouncements().catch(() => []).then(setAnnouncements);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_posts' }, () => {
+        db.fetchBlogPosts().catch(() => []).then(setBlogPosts);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_likes' }, () => {
+        db.fetchBlogPosts().catch(() => []).then(setBlogPosts);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   // Blog
   const addBlogPost = useCallback(async (post: Partial<BlogPost>, authorId: string) => {
@@ -117,20 +148,12 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
       return { ...p, likes: liked ? [...p.likes, userId] : p.likes.filter(id => id !== userId) };
     }));
 
-    // Notify the post author when someone likes their post
     if (liked) {
       const post = blogPosts.find(p => p.id === postId);
       if (post) {
-        // Get post author's user_id from blog_posts table
         const { data: postData } = await supabase.from('blog_posts').select('author_id').eq('id', postId).single();
         if (postData?.author_id && postData.author_id !== userId) {
-          createNotification(
-            postData.author_id,
-            'Post Liked ❤️',
-            `Someone liked your post "${post.title}"`,
-            'info',
-            '/blog'
-          ).catch(() => {});
+          createNotification(postData.author_id, 'Post Liked ❤️', `Someone liked your post "${post.title}"`, 'info', '/blog').catch(() => {});
         }
       }
     }
@@ -176,20 +199,18 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
     setStudents(prev => prev.filter(s => s.id !== id));
   }, []);
 
-  // Payments - notify parent when fee is paid
+  // Payments
   const addPayment = useCallback(async (payment: Partial<Payment>) => {
     const newPayment = await db.createPayment(payment);
     setPayments(prev => [newPayment, ...prev]);
     const freshStudents = await db.fetchStudents();
     setStudents(freshStudents);
 
-    // Notify linked parents about fee payment
     if (payment.studentId) {
       const { data: links } = await supabase.from('parent_students').select('parent_id').eq('student_id', payment.studentId);
       if (links && links.length > 0) {
-        const parentIds = links.map(l => l.parent_id);
         createBulkNotifications(
-          parentIds,
+          links.map(l => l.parent_id),
           'Fee Payment Recorded 💰',
           `A payment of ₦${Number(payment.amount).toLocaleString()} has been recorded for your child.`,
           'success'
