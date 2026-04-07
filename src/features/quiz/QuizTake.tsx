@@ -304,7 +304,7 @@ export const QuizTake: React.FC = () => {
 
       {/* Navigation */}
       <div className="flex justify-between items-center">
-        <Button variant="outline" onClick={goBack} disabled={index === 0 || showResult} className="gap-2"><FiArrowLeft className="w-4 h-4" />{t.previous}</Button>
+        <Button variant="outline" onClick={goBack} disabled={index === 0 || showResult} className="gap-2"><FiArrowLeft className="w-4 h-4" />Back</Button>
         <Button onClick={() => goNext(false)} disabled={showResult || (!draft.trim() && current.type !== 'essay')} className="gap-2">
           {index < assignedQuestions.length - 1 ? (<>{t.next}<FiArrowRight className="w-4 h-4" /></>) : (<>{t.finish}<FiFlag className="w-4 h-4" /></>)}
         </Button>
