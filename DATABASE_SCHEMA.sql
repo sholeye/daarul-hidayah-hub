@@ -8,14 +8,14 @@
 -- =============================================================================
 
 -- 1. ENUM TYPES
-CREATE TYPE public.app_role AS ENUM ('admin', 'instructor', 'learner', 'parent');
-CREATE TYPE public.fee_status AS ENUM ('paid', 'unpaid', 'partial');
-CREATE TYPE public.attendance_status AS ENUM ('present', 'absent', 'late', 'excused');
-CREATE TYPE public.announcement_category AS ENUM ('general', 'academic', 'event', 'urgent');
-CREATE TYPE public.payment_status AS ENUM ('completed', 'pending', 'failed');
+DO $$ BEGIN CREATE TYPE public.app_role AS ENUM ('admin', 'instructor', 'learner', 'parent'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.fee_status AS ENUM ('paid', 'unpaid', 'partial'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.attendance_status AS ENUM ('present', 'absent', 'late', 'excused'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.announcement_category AS ENUM ('general', 'academic', 'event', 'urgent'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE public.payment_status AS ENUM ('completed', 'pending', 'failed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- 2. PROFILES TABLE
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
   email TEXT NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE public.profiles (
 );
 
 -- 3. USER ROLES TABLE
-CREATE TABLE public.user_roles (
+CREATE TABLE IF NOT EXISTS public.user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   role app_role NOT NULL,
@@ -33,17 +33,17 @@ CREATE TABLE public.user_roles (
 );
 
 -- 4. SCHOOL CLASSES
-CREATE TABLE public.school_classes (
+CREATE TABLE IF NOT EXISTS public.school_classes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
-  name_arabic TEXT NOT NULL,
-  level TEXT NOT NULL CHECK (level IN ('preparatory', 'primary')),
+  name_arabic TEXT NOT NULL DEFAULT '',
+  level TEXT NOT NULL DEFAULT 'primary' CHECK (level IN ('preparatory', 'primary')),
   instructor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
 -- 5. STUDENTS TABLE
-CREATE TABLE public.students (
+CREATE TABLE IF NOT EXISTS public.students (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   student_id TEXT NOT NULL UNIQUE,
@@ -54,8 +54,8 @@ CREATE TABLE public.students (
   phone TEXT,
   origin TEXT,
   sex TEXT CHECK (sex IN ('male', 'female')),
-  guardian_name TEXT NOT NULL,
-  guardian_phone TEXT NOT NULL,
+  guardian_name TEXT NOT NULL DEFAULT '',
+  guardian_phone TEXT NOT NULL DEFAULT '',
   guardian_occupation TEXT,
   guardian_state TEXT,
   class TEXT NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE public.students (
 );
 
 -- 6. RESULTS TABLE
-CREATE TABLE public.results (
+CREATE TABLE IF NOT EXISTS public.results (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id TEXT NOT NULL REFERENCES public.students(student_id) ON DELETE CASCADE,
   term TEXT NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE public.results (
 );
 
 -- 7. ATTENDANCE TABLE
-CREATE TABLE public.attendance (
+CREATE TABLE IF NOT EXISTS public.attendance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id TEXT NOT NULL REFERENCES public.students(student_id) ON DELETE CASCADE,
   date DATE NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE public.attendance (
 );
 
 -- 8. PAYMENTS TABLE
-CREATE TABLE public.payments (
+CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id TEXT NOT NULL REFERENCES public.students(student_id) ON DELETE CASCADE,
   amount NUMERIC(10,2) NOT NULL,
@@ -115,7 +115,7 @@ CREATE TABLE public.payments (
 );
 
 -- 9. ANNOUNCEMENTS TABLE
-CREATE TABLE public.announcements (
+CREATE TABLE IF NOT EXISTS public.announcements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   content TEXT NOT NULL,
@@ -127,13 +127,13 @@ CREATE TABLE public.announcements (
 );
 
 -- 10. BLOG POSTS TABLE
-CREATE TABLE public.blog_posts (
+CREATE TABLE IF NOT EXISTS public.blog_posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   content TEXT NOT NULL,
   excerpt TEXT,
   author_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  author_name TEXT NOT NULL,
+  author_name TEXT NOT NULL DEFAULT 'Admin',
   author_role app_role DEFAULT 'admin',
   is_published BOOLEAN DEFAULT FALSE,
   tags TEXT[] DEFAULT '{}',
@@ -143,7 +143,7 @@ CREATE TABLE public.blog_posts (
 );
 
 -- 11. BLOG LIKES TABLE
-CREATE TABLE public.blog_likes (
+CREATE TABLE IF NOT EXISTS public.blog_likes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES public.blog_posts(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -152,7 +152,7 @@ CREATE TABLE public.blog_likes (
 );
 
 -- 12. PASSWORD RESET REQUESTS
-CREATE TABLE public.password_reset_requests (
+CREATE TABLE IF NOT EXISTS public.password_reset_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id TEXT NOT NULL REFERENCES public.students(student_id) ON DELETE CASCADE,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'rejected')),
@@ -162,7 +162,7 @@ CREATE TABLE public.password_reset_requests (
 );
 
 -- 13. PARENT-STUDENT LINK TABLE
-CREATE TABLE public.parent_students (
+CREATE TABLE IF NOT EXISTS public.parent_students (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   parent_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   student_id TEXT NOT NULL REFERENCES public.students(student_id) ON DELETE CASCADE,
@@ -171,7 +171,7 @@ CREATE TABLE public.parent_students (
 );
 
 -- 14. NOTIFICATIONS TABLE
-CREATE TABLE public.notifications (
+CREATE TABLE IF NOT EXISTS public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
@@ -186,19 +186,17 @@ CREATE TABLE public.notifications (
 -- 15. QUIZ SYSTEM TABLES
 -- =============================================================================
 
--- Quiz Houses (the 4 houses)
-CREATE TABLE public.quiz_houses (
+CREATE TABLE IF NOT EXISTS public.quiz_houses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
-  name_arabic TEXT NOT NULL,
-  color TEXT NOT NULL,
+  name_arabic TEXT NOT NULL DEFAULT '',
+  color TEXT NOT NULL DEFAULT '',
   total_score INTEGER DEFAULT 0,
   competitions_won INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Quiz Questions (question bank managed by admin)
-CREATE TABLE public.quiz_questions (
+CREATE TABLE IF NOT EXISTS public.quiz_questions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   question TEXT NOT NULL,
   question_arabic TEXT,
@@ -214,8 +212,7 @@ CREATE TABLE public.quiz_questions (
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Quiz Competitions
-CREATE TABLE public.quiz_competitions (
+CREATE TABLE IF NOT EXISTS public.quiz_competitions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   scheduled_date DATE NOT NULL,
@@ -227,8 +224,7 @@ CREATE TABLE public.quiz_competitions (
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Quiz Representatives (assigned to a competition)
-CREATE TABLE public.quiz_representatives (
+CREATE TABLE IF NOT EXISTS public.quiz_representatives (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   competition_id UUID NOT NULL REFERENCES public.quiz_competitions(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -241,8 +237,7 @@ CREATE TABLE public.quiz_representatives (
   UNIQUE(competition_id, login_code)
 );
 
--- Quiz Answers (submitted by representatives)
-CREATE TABLE public.quiz_answers (
+CREATE TABLE IF NOT EXISTS public.quiz_answers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   competition_id UUID NOT NULL REFERENCES public.quiz_competitions(id) ON DELETE CASCADE,
   representative_id UUID NOT NULL REFERENCES public.quiz_representatives(id) ON DELETE CASCADE,
@@ -258,8 +253,7 @@ CREATE TABLE public.quiz_answers (
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Quiz Competition Results (per-house scores after completion)
-CREATE TABLE public.quiz_competition_results (
+CREATE TABLE IF NOT EXISTS public.quiz_competition_results (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   competition_id UUID NOT NULL REFERENCES public.quiz_competitions(id) ON DELETE CASCADE,
   house_scores JSONB NOT NULL DEFAULT '{}',
@@ -301,18 +295,23 @@ BEGIN
   INSERT INTO public.profiles (id, full_name, email)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
     NEW.email
-  );
+  )
+  ON CONFLICT (id) DO NOTHING;
+
   IF NEW.raw_user_meta_data->>'role' IS NOT NULL THEN
     INSERT INTO public.user_roles (user_id, role)
-    VALUES (NEW.id, (NEW.raw_user_meta_data->>'role')::app_role);
+    VALUES (NEW.id, (NEW.raw_user_meta_data->>'role')::app_role)
+    ON CONFLICT (user_id, role) DO NOTHING;
   END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
@@ -322,10 +321,15 @@ RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_students_updated_at ON public.students;
 CREATE TRIGGER update_students_updated_at BEFORE UPDATE ON public.students FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+DROP TRIGGER IF EXISTS update_results_updated_at ON public.results;
 CREATE TRIGGER update_results_updated_at BEFORE UPDATE ON public.results FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+DROP TRIGGER IF EXISTS update_blog_posts_updated_at ON public.blog_posts;
 CREATE TRIGGER update_blog_posts_updated_at BEFORE UPDATE ON public.blog_posts FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+DROP TRIGGER IF EXISTS update_announcements_updated_at ON public.announcements;
 CREATE TRIGGER update_announcements_updated_at BEFORE UPDATE ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 -- Notify admins on password reset request
@@ -339,12 +343,13 @@ BEGIN
          'Password Reset Request 🔑',
          'Student ' || NEW.student_id || ' requested a password reset.',
          'warning',
-         '/admin/assignments'
+         '/admin/students'
   FROM public.user_roles ur WHERE ur.role = 'admin';
   RETURN NEW;
 END;
 $$;
 
+DROP TRIGGER IF EXISTS password_reset_requests_notify_admins ON public.password_reset_requests;
 CREATE TRIGGER password_reset_requests_notify_admins
   AFTER INSERT ON public.password_reset_requests
   FOR EACH ROW EXECUTE FUNCTION public.notify_admins_on_password_reset_request();
@@ -373,110 +378,130 @@ ALTER TABLE public.quiz_representatives ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quiz_answers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quiz_competition_results ENABLE ROW LEVEL SECURITY;
 
+-- ===================== DROP ALL EXISTING POLICIES =====================
+-- This ensures a clean slate when re-running the script
+
+DO $$ 
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN (
+    SELECT policyname, tablename, schemaname 
+    FROM pg_policies 
+    WHERE schemaname = 'public'
+  ) LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', r.policyname, r.schemaname, r.tablename);
+  END LOOP;
+END $$;
+
 -- PROFILES
-CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT TO authenticated USING (id = auth.uid());
-CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (id = auth.uid());
-CREATE POLICY "System can insert profiles" ON public.profiles FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "profiles_select_own" ON public.profiles FOR SELECT TO authenticated USING (id = auth.uid());
+CREATE POLICY "profiles_select_admin" ON public.profiles FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE TO authenticated USING (id = auth.uid()) WITH CHECK (id = auth.uid());
+CREATE POLICY "profiles_insert_system" ON public.profiles FOR INSERT WITH CHECK (TRUE);
 
 -- USER ROLES
-CREATE POLICY "Users can view own role" ON public.user_roles FOR SELECT TO authenticated USING (user_id = auth.uid());
-CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "System can insert roles" ON public.user_roles FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "roles_select_own" ON public.user_roles FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "roles_select_admin" ON public.user_roles FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "roles_insert_system" ON public.user_roles FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "roles_update_admin" ON public.user_roles FOR UPDATE TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "roles_delete_admin" ON public.user_roles FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 
 -- STUDENTS
-CREATE POLICY "Admins full access to students" ON public.students FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Instructors can view assigned students" ON public.students FOR SELECT TO authenticated
+CREATE POLICY "students_all_admin" ON public.students FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "students_select_instructor" ON public.students FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.school_classes sc WHERE sc.name = students.class AND sc.instructor_id = auth.uid()));
-CREATE POLICY "Students can view own record" ON public.students FOR SELECT TO authenticated USING (auth_user_id = auth.uid());
-CREATE POLICY "Parents can view linked students" ON public.students FOR SELECT TO authenticated
+CREATE POLICY "students_select_own" ON public.students FOR SELECT TO authenticated USING (auth_user_id = auth.uid());
+CREATE POLICY "students_select_parent" ON public.students FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.parent_students ps WHERE ps.parent_id = auth.uid() AND ps.student_id = students.student_id));
 
 -- RESULTS
-CREATE POLICY "Admins full access to results" ON public.results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Instructors can manage assigned results" ON public.results FOR ALL TO authenticated
+CREATE POLICY "results_all_admin" ON public.results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "results_all_instructor" ON public.results FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s JOIN public.school_classes sc ON sc.name = s.class WHERE s.student_id = results.student_id AND sc.instructor_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM public.students s JOIN public.school_classes sc ON sc.name = s.class WHERE s.student_id = results.student_id AND sc.instructor_id = auth.uid()));
-CREATE POLICY "Students can view own results" ON public.results FOR SELECT TO authenticated
+CREATE POLICY "results_select_own" ON public.results FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = results.student_id AND s.auth_user_id = auth.uid()));
-CREATE POLICY "Parents can view linked results" ON public.results FOR SELECT TO authenticated
+CREATE POLICY "results_select_parent" ON public.results FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.parent_students ps WHERE ps.parent_id = auth.uid() AND ps.student_id = results.student_id));
 
 -- ATTENDANCE
-CREATE POLICY "Admins full access to attendance" ON public.attendance FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Instructors can manage assigned attendance" ON public.attendance FOR ALL TO authenticated
+CREATE POLICY "attendance_all_admin" ON public.attendance FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "attendance_all_instructor" ON public.attendance FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s JOIN public.school_classes sc ON sc.name = s.class WHERE s.student_id = attendance.student_id AND sc.instructor_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM public.students s JOIN public.school_classes sc ON sc.name = s.class WHERE s.student_id = attendance.student_id AND sc.instructor_id = auth.uid()));
-CREATE POLICY "Students can view own attendance" ON public.attendance FOR SELECT TO authenticated
+CREATE POLICY "attendance_select_own" ON public.attendance FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = attendance.student_id AND s.auth_user_id = auth.uid()));
-CREATE POLICY "Parents can view linked attendance" ON public.attendance FOR SELECT TO authenticated
+CREATE POLICY "attendance_select_parent" ON public.attendance FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.parent_students ps WHERE ps.parent_id = auth.uid() AND ps.student_id = attendance.student_id));
 
 -- PAYMENTS
-CREATE POLICY "Admins full access to payments" ON public.payments FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Students can view own payments" ON public.payments FOR SELECT TO authenticated
+CREATE POLICY "payments_all_admin" ON public.payments FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "payments_select_own" ON public.payments FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = payments.student_id AND s.auth_user_id = auth.uid()));
-CREATE POLICY "Parents can view linked payments" ON public.payments FOR SELECT TO authenticated
+CREATE POLICY "payments_select_parent" ON public.payments FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.parent_students ps WHERE ps.parent_id = auth.uid() AND ps.student_id = payments.student_id));
 
 -- ANNOUNCEMENTS
-CREATE POLICY "Anyone authenticated can view active announcements" ON public.announcements FOR SELECT TO authenticated USING (is_active = TRUE);
-CREATE POLICY "Public can view active announcements" ON public.announcements FOR SELECT USING (is_active = TRUE);
-CREATE POLICY "Admins full access to announcements" ON public.announcements FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "announcements_select_public" ON public.announcements FOR SELECT USING (is_active = TRUE);
+CREATE POLICY "announcements_all_admin" ON public.announcements FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- BLOG POSTS
-CREATE POLICY "Anyone can view published posts" ON public.blog_posts FOR SELECT USING (is_published = TRUE);
-CREATE POLICY "Admins full access to blog" ON public.blog_posts FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "blog_select_published" ON public.blog_posts FOR SELECT USING (is_published = TRUE);
+CREATE POLICY "blog_all_admin" ON public.blog_posts FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- BLOG LIKES
-CREATE POLICY "Anyone can view likes" ON public.blog_likes FOR SELECT USING (TRUE);
-CREATE POLICY "Authenticated users can like" ON public.blog_likes FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
-CREATE POLICY "Users can unlike own likes" ON public.blog_likes FOR DELETE TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "likes_select_all" ON public.blog_likes FOR SELECT USING (TRUE);
+CREATE POLICY "likes_insert_auth" ON public.blog_likes FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+CREATE POLICY "likes_delete_own" ON public.blog_likes FOR DELETE TO authenticated USING (user_id = auth.uid());
 
 -- SCHOOL CLASSES
-CREATE POLICY "Anyone authenticated can view classes" ON public.school_classes FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY "Admins can manage classes" ON public.school_classes FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "classes_select_auth" ON public.school_classes FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY "classes_all_admin" ON public.school_classes FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- PASSWORD RESET REQUESTS
-CREATE POLICY "Students can create requests" ON public.password_reset_requests FOR INSERT TO authenticated WITH CHECK (TRUE);
-CREATE POLICY "Students can view own requests" ON public.password_reset_requests FOR SELECT TO authenticated
+CREATE POLICY "reset_insert_auth" ON public.password_reset_requests FOR INSERT TO authenticated WITH CHECK (TRUE);
+CREATE POLICY "reset_select_own" ON public.password_reset_requests FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM public.students s WHERE s.student_id = password_reset_requests.student_id AND s.auth_user_id = auth.uid()));
-CREATE POLICY "Admins can manage requests" ON public.password_reset_requests FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "reset_all_admin" ON public.password_reset_requests FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- PARENT STUDENTS
-CREATE POLICY "Admins can manage parent-student links" ON public.parent_students FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Parents can view own links" ON public.parent_students FOR SELECT TO authenticated USING (parent_id = auth.uid());
+CREATE POLICY "parent_students_all_admin" ON public.parent_students FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "parent_students_select_own" ON public.parent_students FOR SELECT TO authenticated USING (parent_id = auth.uid());
 
 -- NOTIFICATIONS
-CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT TO authenticated USING (user_id = auth.uid());
-CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE TO authenticated USING (user_id = auth.uid());
-CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE TO authenticated USING (user_id = auth.uid());
-CREATE POLICY "Authenticated can create notifications" ON public.notifications FOR INSERT TO authenticated WITH CHECK (TRUE);
+CREATE POLICY "notif_select_own" ON public.notifications FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "notif_update_own" ON public.notifications FOR UPDATE TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+CREATE POLICY "notif_delete_own" ON public.notifications FOR DELETE TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "notif_insert_auth" ON public.notifications FOR INSERT TO authenticated WITH CHECK (TRUE);
+CREATE POLICY "notif_insert_system" ON public.notifications FOR INSERT WITH CHECK (TRUE);
 
 -- QUIZ HOUSES (public read, admin write)
-CREATE POLICY "Anyone can view quiz houses" ON public.quiz_houses FOR SELECT USING (TRUE);
-CREATE POLICY "Admins can manage quiz houses" ON public.quiz_houses FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "quiz_houses_select" ON public.quiz_houses FOR SELECT USING (TRUE);
+CREATE POLICY "quiz_houses_all_admin" ON public.quiz_houses FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
--- QUIZ QUESTIONS (admin full, public read for active competitions)
-CREATE POLICY "Admins full access to quiz questions" ON public.quiz_questions FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Public can view quiz questions" ON public.quiz_questions FOR SELECT USING (TRUE);
+-- QUIZ QUESTIONS
+CREATE POLICY "quiz_questions_select" ON public.quiz_questions FOR SELECT USING (TRUE);
+CREATE POLICY "quiz_questions_all_admin" ON public.quiz_questions FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- QUIZ COMPETITIONS
-CREATE POLICY "Anyone can view competitions" ON public.quiz_competitions FOR SELECT USING (TRUE);
-CREATE POLICY "Admins can manage competitions" ON public.quiz_competitions FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "quiz_competitions_select" ON public.quiz_competitions FOR SELECT USING (TRUE);
+CREATE POLICY "quiz_competitions_all_admin" ON public.quiz_competitions FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- QUIZ REPRESENTATIVES
-CREATE POLICY "Anyone can view representatives" ON public.quiz_representatives FOR SELECT USING (TRUE);
-CREATE POLICY "Admins can manage representatives" ON public.quiz_representatives FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "quiz_reps_select" ON public.quiz_representatives FOR SELECT USING (TRUE);
+CREATE POLICY "quiz_reps_all_admin" ON public.quiz_representatives FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "quiz_reps_update_anon" ON public.quiz_representatives FOR UPDATE USING (TRUE) WITH CHECK (TRUE);
 
 -- QUIZ ANSWERS
-CREATE POLICY "Anyone can insert quiz answers" ON public.quiz_answers FOR INSERT WITH CHECK (TRUE);
-CREATE POLICY "Anyone can view quiz answers" ON public.quiz_answers FOR SELECT USING (TRUE);
-CREATE POLICY "Admins can manage quiz answers" ON public.quiz_answers FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "quiz_answers_select" ON public.quiz_answers FOR SELECT USING (TRUE);
+CREATE POLICY "quiz_answers_insert" ON public.quiz_answers FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "quiz_answers_all_admin" ON public.quiz_answers FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- QUIZ COMPETITION RESULTS
-CREATE POLICY "Anyone can view competition results" ON public.quiz_competition_results FOR SELECT USING (TRUE);
-CREATE POLICY "Admins can manage competition results" ON public.quiz_competition_results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "quiz_results_select" ON public.quiz_competition_results FOR SELECT USING (TRUE);
+CREATE POLICY "quiz_results_all_admin" ON public.quiz_competition_results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "quiz_results_insert" ON public.quiz_competition_results FOR INSERT WITH CHECK (TRUE);
 
 -- =============================================================================
 -- STORAGE - Avatar bucket
@@ -484,30 +509,39 @@ CREATE POLICY "Admins can manage competition results" ON public.quiz_competition
 
 INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true) ON CONFLICT (id) DO NOTHING;
 
-CREATE POLICY "Users can upload own avatar" ON storage.objects FOR INSERT TO authenticated
+-- Drop existing storage policies to avoid conflicts
+DO $$ 
+DECLARE r RECORD;
+BEGIN
+  FOR r IN (SELECT policyname FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname LIKE '%avatar%') LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', r.policyname);
+  END LOOP;
+END $$;
+
+CREATE POLICY "avatar_upload" ON storage.objects FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
-CREATE POLICY "Users can update own avatar" ON storage.objects FOR UPDATE TO authenticated
+CREATE POLICY "avatar_update" ON storage.objects FOR UPDATE TO authenticated
   USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text)
   WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
-CREATE POLICY "Users can delete own avatar" ON storage.objects FOR DELETE TO authenticated
+CREATE POLICY "avatar_delete" ON storage.objects FOR DELETE TO authenticated
   USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
-CREATE POLICY "Public can view avatars" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+CREATE POLICY "avatar_view" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
 
 -- =============================================================================
 -- REALTIME - Enable for key tables
 -- =============================================================================
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.announcements;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.students;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.attendance;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.payments;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.results;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.blog_posts;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.blog_likes;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_houses;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_competitions;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_representatives;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.announcements; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.students; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.attendance; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.payments; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.results; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.blog_posts; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.blog_likes; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_houses; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_competitions; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.quiz_representatives; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- =============================================================================
 -- SEED DATA - School Classes
@@ -517,39 +551,32 @@ INSERT INTO public.school_classes (name, name_arabic, level) VALUES
   ('Safu Awwal', 'الصف الأول', 'preparatory'),
   ('Safu Thaniy', 'الصف الثاني', 'preparatory'),
   ('Safu Thalith', 'الصف الثالث', 'preparatory'),
-  ('Awwal Ibtida''i', 'الأول ابتدائي', 'primary'),
-  ('Thaniy Ibtida''i', 'الثاني ابتدائي', 'primary'),
-  ('Thalith Ibtida''i', 'الثالث ابتدائي', 'primary');
+  ('Awwal Ibtidai', 'الأول ابتدائي', 'primary'),
+  ('Thaniy Ibtidai', 'الثاني ابتدائي', 'primary'),
+  ('Thalith Ibtidai', 'الثالث ابتدائي', 'primary')
+ON CONFLICT (name) DO NOTHING;
 
 -- SEED DATA - Quiz Houses
 INSERT INTO public.quiz_houses (name, name_arabic, color) VALUES
   ('AbuBakr', 'أبو بكر', 'bg-emerald-500'),
   ('Umar', 'عمر', 'bg-blue-500'),
   ('Uthman', 'عثمان', 'bg-amber-500'),
-  ('Ali', 'علي', 'bg-rose-500');
+  ('Ali', 'علي', 'bg-rose-500')
+ON CONFLICT (name) DO NOTHING;
 
 -- =============================================================================
 -- PERFORMANCE INDEXES
 -- =============================================================================
 
-CREATE INDEX idx_students_student_id ON public.students(student_id);
-CREATE INDEX idx_students_class ON public.students(class);
-CREATE INDEX idx_students_auth_user ON public.students(auth_user_id);
-CREATE INDEX idx_attendance_student_date ON public.attendance(student_id, date);
-CREATE INDEX idx_results_student ON public.results(student_id);
-CREATE INDEX idx_payments_student ON public.payments(student_id);
-CREATE INDEX idx_blog_likes_post ON public.blog_likes(post_id);
-CREATE INDEX idx_parent_students_parent ON public.parent_students(parent_id);
-CREATE INDEX idx_user_roles_user ON public.user_roles(user_id);
-CREATE INDEX idx_notifications_user ON public.notifications(user_id, is_read);
-CREATE INDEX idx_quiz_reps_competition ON public.quiz_representatives(competition_id);
-CREATE INDEX idx_quiz_answers_competition ON public.quiz_answers(competition_id);
-
--- =============================================================================
--- ADMIN SETUP QUERIES (run after first signup)
--- =============================================================================
--- 1. Sign up as a staff member via the app
--- 2. Then run:
---    UPDATE public.user_roles SET role = 'admin' WHERE user_id = (SELECT id FROM auth.users WHERE email = 'YOUR_EMAIL');
---    If no role row exists yet:
---    INSERT INTO public.user_roles (user_id, role) VALUES ((SELECT id FROM auth.users WHERE email = 'YOUR_EMAIL'), 'admin');
+CREATE INDEX IF NOT EXISTS idx_students_student_id ON public.students(student_id);
+CREATE INDEX IF NOT EXISTS idx_students_class ON public.students(class);
+CREATE INDEX IF NOT EXISTS idx_students_auth_user ON public.students(auth_user_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_student_date ON public.attendance(student_id, date);
+CREATE INDEX IF NOT EXISTS idx_results_student ON public.results(student_id);
+CREATE INDEX IF NOT EXISTS idx_payments_student ON public.payments(student_id);
+CREATE INDEX IF NOT EXISTS idx_blog_likes_post ON public.blog_likes(post_id);
+CREATE INDEX IF NOT EXISTS idx_parent_students_parent ON public.parent_students(parent_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user ON public.user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON public.notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_quiz_reps_competition ON public.quiz_representatives(competition_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_answers_competition ON public.quiz_answers(competition_id);

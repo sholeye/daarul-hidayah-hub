@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://ntkhalornetabwcuvskz.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_qntHrRH2eR1QhlwiMvbCVw_cz3wPSvW';
+const SUPABASE_URL = 'https://hmdipmhsqrnxzxsfcqnf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_K0UUyxWVzj0g3FEk4h7B2g_VcDsHBFZ';
 
 export const createIsolatedAuthClient = () => createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
