@@ -1,10 +1,11 @@
 import React from 'react';
 import { FiChevronRight } from 'react-icons/fi';
-import { schoolClasses } from '@/data/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSharedData } from '@/contexts/SharedDataContext';
 
 export const AcademicStructureSection: React.FC = () => {
   const { t } = useLanguage();
+  const { schoolClasses } = useSharedData();
   const preparatoryClasses = schoolClasses.filter(c => c.level === 'preparatory');
   const primaryClasses = schoolClasses.filter(c => c.level === 'primary');
 
@@ -21,7 +22,6 @@ export const AcademicStructureSection: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {/* Preparatory Level */}
           <div className="bg-card rounded-2xl p-5 md:p-6 border border-border shadow-soft">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -34,10 +34,7 @@ export const AcademicStructureSection: React.FC = () => {
             </div>
             <div className="space-y-2">
               {preparatoryClasses.map((cls) => (
-                <div
-                  key={cls.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group"
-                >
+                <div key={cls.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
                   <div className="flex items-center gap-3">
                     <FiChevronRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
                     <div>
@@ -50,7 +47,6 @@ export const AcademicStructureSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Primary Level */}
           <div className="bg-card rounded-2xl p-5 md:p-6 border border-border shadow-soft">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
@@ -63,10 +59,7 @@ export const AcademicStructureSection: React.FC = () => {
             </div>
             <div className="space-y-2">
               {primaryClasses.map((cls) => (
-                <div
-                  key={cls.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group"
-                >
+                <div key={cls.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
                   <div className="flex items-center gap-3">
                     <FiChevronRight className="w-4 h-4 text-secondary group-hover:translate-x-1 transition-transform" />
                     <div>
