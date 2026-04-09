@@ -33,12 +33,57 @@ export const SettingsPage: React.FC = () => {
   });
 
   const [isSavingUser, setIsSavingUser] = useState(false);
+  const [isSavingSchool, setIsSavingSchool] = useState(false);
 
   useEffect(() => {
     setUserSettings(prev => ({ ...prev, name: user?.name || '', email: user?.email || '' }));
   }, [user?.name, user?.email]);
 
-  const handleSaveSchool = () => toast.success('School settings saved!');
+  useEffect(() => {
+    const loadSchoolSettings = async () => {
+      const { data, error } = await supabase
+        .from('school_settings')
+        .select('name, motto, email, phone, address, term_fee')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (error || !data) return;
+
+      setSchoolSettings({
+        name: data.name,
+        motto: data.motto,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        termFee: String(data.term_fee ?? 6000),
+      });
+    };
+
+    loadSchoolSettings();
+  }, []);
+
+  const handleSaveSchool = async () => {
+    setIsSavingSchool(true);
+
+    try {
+      const { error } = await supabase.from('school_settings').upsert({
+        id: 1,
+        name: schoolSettings.name.trim(),
+        motto: schoolSettings.motto.trim(),
+        email: schoolSettings.email.trim().toLowerCase(),
+        phone: schoolSettings.phone.trim(),
+        address: schoolSettings.address.trim(),
+        term_fee: Number(schoolSettings.termFee) || 0,
+      });
+
+      if (error) throw error;
+      toast.success('School settings updated.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save school settings.');
+    } finally {
+      setIsSavingSchool(false);
+    }
+  };
 
   const handleSaveUser = async () => {
     if (!user) return toast.error('You must be logged in.');
@@ -118,7 +163,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
         <div className="mt-6 pt-6 border-t border-border">
-          <Button onClick={handleSaveSchool}><FiSave className="w-4 h-4 mr-2" /> Save School Settings</Button>
+          <Button onClick={handleSaveSchool} disabled={isSavingSchool}><FiSave className="w-4 h-4 mr-2" /> {isSavingSchool ? 'Saving…' : 'Save School Settings'}</Button>
         </div>
       </div>
 
