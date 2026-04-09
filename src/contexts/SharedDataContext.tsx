@@ -120,6 +120,9 @@ export const SharedDataProvider: React.FC<{ children: ReactNode }> = ({ children
       .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_likes' }, () => {
         db.fetchBlogPosts().catch(() => []).then(setBlogPosts);
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'school_classes' }, () => {
+        db.fetchSchoolClasses().catch(() => []).then(setSchoolClasses);
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
