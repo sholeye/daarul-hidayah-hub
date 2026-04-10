@@ -9,7 +9,7 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/utils/helpers';
+import { formatCurrency, getOutstandingBalance, isResultAccessible } from '@/utils/helpers';
 import { InlineLoader } from '@/components/ui/page-loader';
 import { motion } from 'framer-motion';
 
@@ -30,8 +30,8 @@ export const LearnerDashboard: React.FC = () => {
   const attendancePercentage = Math.round(((presentDays + lateDays) / totalDays) * 100);
 
   const activeAnnouncements = announcements.filter(a => a.isActive).slice(0, 3);
-  const feesPaid = currentStudent?.feeStatus === 'paid';
-  const feeBalance = currentStudent ? currentStudent.totalFee - currentStudent.amountPaid : 0;
+  const feesPaid = isResultAccessible(currentStudent);
+  const feeBalance = currentStudent ? getOutstandingBalance(currentStudent.totalFee, currentStudent.amountPaid) : 0;
 
   if (isLoading) return <InlineLoader />;
 
@@ -74,7 +74,7 @@ export const LearnerDashboard: React.FC = () => {
               <div className={`w-10 h-10 rounded-lg ${item.bg} flex items-center justify-center`}><item.icon className={`w-5 h-5 ${item.color}`} /></div>
               <span className="text-sm text-muted-foreground">{item.label}</span>
             </div>
-            {item.badge ? <Badge variant={currentStudent.feeStatus === 'paid' ? 'paid' : 'unpaid'}>{item.value}</Badge> : <p className="text-2xl font-bold text-foreground truncate">{item.value}</p>}
+            {item.badge ? <Badge variant={feesPaid ? 'paid' : currentStudent.feeStatus === 'partial' ? 'partial' : 'unpaid'}>{item.value}</Badge> : <p className="text-2xl font-bold text-foreground truncate">{item.value}</p>}
             <p className="text-xs text-muted-foreground mt-2 flex gap-2 truncate">{item.sub}</p>
           </motion.div>
         ))}

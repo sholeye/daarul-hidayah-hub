@@ -7,7 +7,7 @@ import { FiUser, FiCheckCircle, FiXCircle, FiFileText, FiDollarSign } from 'reac
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Student } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency, formatDate } from '@/utils/helpers';
+import { formatCurrency, formatDate, getOutstandingBalance, isResultAccessible } from '@/utils/helpers';
 import { InlineLoader } from '@/components/ui/page-loader';
 import { motion } from 'framer-motion';
 
@@ -47,8 +47,8 @@ export const ParentChildren: React.FC = () => {
                   <div>
                     <h3 className="font-bold text-lg text-foreground">{child.fullName}</h3>
                     <p className="text-muted-foreground text-sm">{child.class} • {child.studentId}</p>
-                    <div className="flex gap-2 mt-2">
-                      <Badge variant={child.feeStatus === 'paid' ? 'paid' : 'unpaid'}>{child.feeStatus}</Badge>
+                     <div className="flex gap-2 mt-2">
+                       <Badge variant={isResultAccessible(child) ? 'paid' : child.feeStatus === 'partial' ? 'partial' : 'unpaid'}>{child.feeStatus}</Badge>
                       <Badge variant="default">{child.sex}</Badge>
                     </div>
                   </div>
@@ -87,8 +87,8 @@ export const ParentChildren: React.FC = () => {
                   </div>
                   <div className="flex justify-between p-3 rounded-lg bg-muted/50">
                     <span className="text-muted-foreground">Balance</span>
-                    <span className={`font-medium ${child.totalFee - child.amountPaid > 0 ? 'text-destructive' : 'text-primary'}`}>
-                      {formatCurrency(child.totalFee - child.amountPaid)}
+                     <span className={`font-medium ${getOutstandingBalance(child.totalFee, child.amountPaid) > 0 ? 'text-destructive' : 'text-primary'}`}>
+                       {formatCurrency(getOutstandingBalance(child.totalFee, child.amountPaid))}
                     </span>
                   </div>
                   <div className="flex justify-between p-3 rounded-lg bg-muted/50">
@@ -97,7 +97,7 @@ export const ParentChildren: React.FC = () => {
                   </div>
                 </div>
 
-                {result && child.feeStatus === 'paid' && (
+                {result && isResultAccessible(child) && (
                   <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
                     <h4 className="font-semibold text-foreground mb-3">Latest Result - {result.term}</h4>
                     <div className="flex justify-between text-sm">
@@ -116,7 +116,7 @@ export const ParentChildren: React.FC = () => {
                   </div>
                 )}
 
-                {result && child.feeStatus !== 'paid' && (
+                {result && !isResultAccessible(child) && (
                   <div className="mt-6 p-4 rounded-xl bg-destructive/5 border border-destructive/20 text-center">
                     <FiDollarSign className="w-6 h-6 mx-auto text-destructive mb-2" />
                     <p className="text-sm text-destructive font-medium">Result locked - fees not fully paid</p>

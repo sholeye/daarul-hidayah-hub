@@ -24,7 +24,7 @@ const compressAvatar = async (file: File): Promise<Blob> => {
     img.src = objectUrl;
   });
 
-  const maxSize = 160;
+  const maxSize = 128;
   const ratio = Math.min(maxSize / image.width, maxSize / image.height, 1);
   const width = Math.max(64, Math.round(image.width * ratio));
   const height = Math.max(64, Math.round(image.height * ratio));
@@ -39,7 +39,7 @@ const compressAvatar = async (file: File): Promise<Blob> => {
   ctx.drawImage(image, 0, 0, width, height);
 
   const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, 'image/jpeg', 0.55);
+    canvas.toBlob(resolve, 'image/jpeg', 0.45);
   });
 
   if (!blob) throw new Error('Failed to compress image');
@@ -75,12 +75,19 @@ export const ProfileAvatarUploader: React.FC<ProfileAvatarUploaderProps> = ({
 
     try {
       const compressed = await compressAvatar(file);
-      const filePath = `${user.id}/avatar.jpg`;
+      const timestamp = Date.now();
+      const filePath = `${user.id}/avatar-${timestamp}.jpg`;
+
+      const { data: existingFiles } = await supabase.storage.from('avatars').list(user.id);
+      if (existingFiles && existingFiles.length > 0) {
+        const oldPaths = existingFiles.map((storedFile) => `${user.id}/${storedFile.name}`);
+        await supabase.storage.from('avatars').remove(oldPaths);
+      }
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, compressed, {
-          upsert: true,
+          upsert: false,
           contentType: 'image/jpeg',
           cacheControl: '3600',
         });
@@ -88,7 +95,7 @@ export const ProfileAvatarUploader: React.FC<ProfileAvatarUploaderProps> = ({
       if (uploadError) throw uploadError;
 
       const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      const avatarUrl = publicUrlData.publicUrl;
+      const avatarUrl = `${publicUrlData.publicUrl}?v=${timestamp}`;
 
       const { error: updateError } = await supabase
         .from('profiles')

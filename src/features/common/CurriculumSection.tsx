@@ -6,14 +6,18 @@ export const CurriculumSection: React.FC = () => {
   const { t } = useLanguage();
 
   const subjects = [
-    { icon: FiBookOpen, name: t.quranMemorization, arabic: 'القرآن والتجويد' },
-    { icon: FiBookOpen, name: t.hadith, arabic: 'دراسات الحديث' },
-    { icon: FiBookOpen, name: t.fiqh, arabic: 'الفقه' },
-    { icon: FiBookOpen, name: t.islamicStudies, arabic: 'الدراسات الإسلامية' },
-    { icon: FiGlobe, name: t.arabicLanguage, arabic: 'اللغة العربية' },
-    { icon: FiGlobe, name: t.englishLanguage, arabic: 'اللغة الإنجليزية' },
-    { icon: FiCode, name: t.mathematics, arabic: 'الرياضيات' },
-    { icon: FiCode, name: t.computerIT, arabic: 'الحاسوب' },
+    { icon: FiBookOpen, name: 'hifz', arabic: 'الحفظ' },
+    { icon: FiBookOpen, name: "qira'a", arabic: 'القراءة' },
+    { icon: FiBookOpen, name: 'hadith', arabic: 'الحديث' },
+    { icon: FiGlobe, name: 'lugah', arabic: 'اللغة' },
+    { icon: FiBookOpen, name: 'seerah', arabic: 'السيرة' },
+    { icon: FiBookOpen, name: 'adhkar', arabic: 'الأذكار' },
+    { icon: FiBookOpen, name: 'tajweed', arabic: 'التجويد' },
+    { icon: FiBookOpen, name: 'tawheed', arabic: 'التوحيد' },
+    { icon: FiBookOpen, name: 'fiqh', arabic: 'الفقه' },
+    { icon: FiGlobe, name: 'nahw', arabic: 'النحو' },
+    { icon: FiGlobe, name: 'sarf', arabic: 'الصرف' },
+    { icon: FiCode, name: 'khat', arabic: 'الخط' },
   ];
 
   return (
@@ -29,7 +33,7 @@ export const CurriculumSection: React.FC = () => {
         </div>
 
         {/* Subjects Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 max-w-3xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto">
           {subjects.map((subject) => (
             <div
               key={subject.name}

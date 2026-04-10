@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import type { Student } from '@/types';
 
 export const generateStudentId = (firstName: string, existingCount: number): string => {
   const prefix = firstName
@@ -33,6 +34,36 @@ export const formatCurrency = (amount: number): string => {
     currency: 'NGN',
     minimumFractionDigits: 0,
   }).format(amount);
+};
+
+export const normalizeCurrency = (amount: number): number => {
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount)) return 0;
+  return Math.max(0, numericAmount);
+};
+
+export const getOutstandingBalance = (totalFee: number, amountPaid: number): number => {
+  return Math.max(0, normalizeCurrency(totalFee) - normalizeCurrency(amountPaid));
+};
+
+export const getPaymentProgress = (amountPaid: number, totalFee: number): number => {
+  const safeTotalFee = normalizeCurrency(totalFee);
+  if (safeTotalFee <= 0) return 0;
+  return Math.min(100, Math.round((normalizeCurrency(amountPaid) / safeTotalFee) * 100));
+};
+
+export const getFeeStatus = (amountPaid: number, totalFee: number): Student['feeStatus'] => {
+  const safePaid = normalizeCurrency(amountPaid);
+  const balance = getOutstandingBalance(totalFee, safePaid);
+
+  if (balance === 0 && normalizeCurrency(totalFee) > 0) return 'paid';
+  if (safePaid > 0) return 'partial';
+  return 'unpaid';
+};
+
+export const isResultAccessible = (student?: Pick<Student, 'amountPaid' | 'totalFee'> | null): boolean => {
+  if (!student) return false;
+  return getOutstandingBalance(student.totalFee, student.amountPaid) === 0;
 };
 
 export const formatDate = (dateString: string): string => {

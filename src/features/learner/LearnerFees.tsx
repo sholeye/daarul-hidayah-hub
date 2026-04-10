@@ -7,7 +7,7 @@ import { FiDollarSign, FiCheckCircle, FiAlertCircle, FiFileText, FiUser } from '
 import { useAuth } from '@/features/auth/AuthContext';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency, formatDate } from '@/utils/helpers';
+import { formatCurrency, formatDate, getOutstandingBalance, getPaymentProgress } from '@/utils/helpers';
 import { InlineLoader } from '@/components/ui/page-loader';
 import { motion } from 'framer-motion';
 
@@ -26,8 +26,8 @@ export const LearnerFees: React.FC = () => {
     </div>
   );
 
-  const feeBalance = student.totalFee - student.amountPaid;
-  const paymentPercentage = Math.round((student.amountPaid / student.totalFee) * 100);
+  const feeBalance = getOutstandingBalance(student.totalFee, student.amountPaid);
+  const paymentPercentage = getPaymentProgress(student.amountPaid, student.totalFee);
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">

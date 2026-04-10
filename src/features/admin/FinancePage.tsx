@@ -10,20 +10,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { formatCurrency, formatDate } from '@/utils/helpers';
+import { formatCurrency, formatDate, getOutstandingBalance } from '@/utils/helpers';
 import jsPDF from 'jspdf';
 
-interface PaymentModalProps { isOpen: boolean; onClose: () => void; student: Student | null; onSubmit: (payment: Partial<Payment>) => void; }
+interface PaymentModalProps { isOpen: boolean; onClose: () => void; student: Student | null; onSubmit: (payment: Partial<Payment>) => Promise<void>; }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, student, onSubmit }) => {
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!student) return;
-    onSubmit({
-      studentId: student.studentId, amount: parseFloat(amount),
+    const parsedAmount = Number(amount);
+    const balance = getOutstandingBalance(student.totalFee, student.amountPaid);
+
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      toast.error('Enter a valid payment amount.');
+      return;
+    }
+
+    if (parsedAmount > balance) {
+      toast.error('Payment cannot be more than the outstanding balance.');
+      return;
+    }
+
+    await onSubmit({
+      studentId: student.studentId, amount: parsedAmount,
       date: new Date().toISOString().split('T')[0], term: 'First Term', session: '2024/2025',
       paymentMethod, receiptNumber: `RCP-${Date.now().toString().slice(-6)}`, status: 'completed',
     });
@@ -31,7 +44,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, student, o
   };
 
   if (!isOpen || !student) return null;
-  const balance = student.totalFee - student.amountPaid;
+  const balance = getOutstandingBalance(student.totalFee, student.amountPaid);
 
   return (
     <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -64,8 +77,8 @@ export const FinancePage: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  const totalRevenue = students.reduce((sum, s) => sum + s.amountPaid, 0);
-  const pendingFees = students.reduce((sum, s) => sum + (s.totalFee - s.amountPaid), 0);
+  const totalRevenue = payments.filter((payment) => payment.status === 'completed').reduce((sum, payment) => sum + payment.amount, 0);
+  const pendingFees = students.reduce((sum, student) => sum + getOutstandingBalance(student.totalFee, student.amountPaid), 0);
   const paidCount = students.filter(s => s.feeStatus === 'paid').length;
   const unpaidCount = students.filter(s => s.feeStatus === 'unpaid').length;
 
@@ -75,10 +88,14 @@ export const FinancePage: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handlePayment = (paymentData: Partial<Payment>) => {
-    const newPayment = { ...paymentData, id: Date.now().toString() } as Payment;
-    addPayment(newPayment);
-    toast.success('Payment recorded successfully!');
+  const handlePayment = async (paymentData: Partial<Payment>) => {
+    try {
+      await addPayment(paymentData);
+      toast.success('Payment recorded successfully!');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to record payment.');
+      throw error;
+    }
   };
 
   const generateReceipt = (student: Student, payment: Payment) => {
@@ -145,7 +162,7 @@ export const FinancePage: React.FC = () => {
                   <td className="px-6 py-4 text-sm text-foreground">{student.class}</td>
                   <td className="px-6 py-4 text-sm font-medium text-foreground">{formatCurrency(student.totalFee)}</td>
                   <td className="px-6 py-4 text-sm font-medium text-primary">{formatCurrency(student.amountPaid)}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-destructive">{formatCurrency(student.totalFee - student.amountPaid)}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-destructive">{formatCurrency(getOutstandingBalance(student.totalFee, student.amountPaid))}</td>
                   <td className="px-6 py-4"><Badge variant={student.feeStatus === 'paid' ? 'paid' : student.feeStatus === 'partial' ? 'partial' : 'unpaid'}>{student.feeStatus}</Badge></td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
