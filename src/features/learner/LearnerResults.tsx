@@ -12,13 +12,15 @@ import { toast } from 'sonner';
 import { InlineLoader } from '@/components/ui/page-loader';
 import { motion } from 'framer-motion';
 import jsPDF from 'jspdf';
+import { getOutstandingBalance, isResultAccessible } from '@/utils/helpers';
 
 export const LearnerResults: React.FC = () => {
   const { user } = useAuth();
   const { students, results, isLoading } = useSharedData();
   const student = students.length === 1 ? students[0] : students.find(s => s.email === user?.email) || null;
   const result = student ? results.find(r => r.studentId === student.studentId) : null;
-  const feesPaid = student?.feeStatus === 'paid';
+  const feesPaid = isResultAccessible(student);
+  const balance = student ? getOutstandingBalance(student.totalFee, student.amountPaid) : 0;
 
   const generateResultPDF = () => {
     if (!feesPaid || !result || !student) { toast.error('Cannot download result'); return; }
@@ -70,7 +72,7 @@ export const LearnerResults: React.FC = () => {
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-destructive/20 flex items-center justify-center flex-shrink-0"><FiLock className="w-6 h-6 text-destructive" /></div>
             <div><h2 className="font-semibold text-destructive">Result Access Locked</h2><p className="text-sm text-muted-foreground mt-1">Complete your fee payment to access results.</p>
-              <div className="mt-4 flex items-center gap-2"><Badge variant="unpaid">{student.feeStatus}</Badge><span className="text-sm text-muted-foreground">Balance: ₦{(student.totalFee - student.amountPaid).toLocaleString()}</span></div>
+              <div className="mt-4 flex items-center gap-2"><Badge variant="unpaid">{student.feeStatus}</Badge><span className="text-sm text-muted-foreground">Balance: ₦{balance.toLocaleString()}</span></div>
             </div>
           </div>
         </div>

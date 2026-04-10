@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { formatDate } from '@/utils/helpers';
 import jsPDF from 'jspdf';
 import { formatCurrency } from '@/utils/helpers';
+import { isResultAccessible } from '@/utils/helpers';
 
 interface ResultViewModalProps { isOpen: boolean; onClose: () => void; student: Student | null; result: StudentResult | null; }
 
@@ -61,7 +62,7 @@ export const ResultsPage: React.FC = () => {
     .map(student => ({ ...student, result: results.find(r => r.studentId === student.studentId) }));
 
   const generateResultPDF = (student: Student, result: StudentResult) => {
-    if (student.feeStatus !== 'paid') { toast.error('Cannot generate result - fees not fully paid!'); return; }
+    if (!isResultAccessible(student)) { toast.error('Cannot generate result - fees not fully paid!'); return; }
     const doc = new jsPDF();
     doc.setFillColor(22, 101, 52); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(24);
@@ -120,9 +121,9 @@ export const ResultsPage: React.FC = () => {
                   <td className="px-6 py-4 text-sm font-medium text-foreground">{student.result ? `${student.result.averageScore.toFixed(1)}%` : '-'}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      {student.result && (<>
+                       {student.result && (<>
                         <button onClick={() => { setViewingStudent(student); setViewingResult(student.result!); }} className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground" title="View Result"><FiEye className="w-4 h-4" /></button>
-                        <button onClick={() => generateResultPDF(student, student.result!)} className={`p-2 rounded-lg transition-colors ${student.feeStatus === 'paid' ? 'hover:bg-muted text-muted-foreground hover:text-foreground' : 'opacity-50 cursor-not-allowed text-muted-foreground'}`} title={student.feeStatus === 'paid' ? 'Download PDF' : 'Fee not paid'} disabled={student.feeStatus !== 'paid'}><FiDownload className="w-4 h-4" /></button>
+                         <button onClick={() => generateResultPDF(student, student.result!)} className={`p-2 rounded-lg transition-colors ${isResultAccessible(student) ? 'hover:bg-muted text-muted-foreground hover:text-foreground' : 'opacity-50 cursor-not-allowed text-muted-foreground'}`} title={isResultAccessible(student) ? 'Download PDF' : 'Fee not paid'} disabled={!isResultAccessible(student)}><FiDownload className="w-4 h-4" /></button>
                       </>)}
                       {!student.result && <span className="text-sm text-muted-foreground">Awaiting instructor</span>}
                     </div>

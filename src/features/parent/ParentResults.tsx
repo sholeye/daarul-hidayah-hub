@@ -8,6 +8,7 @@ import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
 import { InlineLoader } from '@/components/ui/page-loader';
 import { motion } from 'framer-motion';
+import { getOutstandingBalance, isResultAccessible } from '@/utils/helpers';
 
 export const ParentResults: React.FC = () => {
   const { students, results, isLoading } = useSharedData();
@@ -22,7 +23,8 @@ export const ParentResults: React.FC = () => {
 
   const child = myChildren.find(c => c.studentId === selectedChild);
   const result = results.find(r => r.studentId === selectedChild);
-  const feesPaid = child?.feeStatus === 'paid';
+  const feesPaid = isResultAccessible(child);
+  const balance = child ? getOutstandingBalance(child.totalFee, child.amountPaid) : 0;
 
   if (isLoading) return <InlineLoader />;
 
@@ -47,7 +49,7 @@ export const ParentResults: React.FC = () => {
           <div className="w-12 h-12 rounded-xl bg-destructive/20 flex items-center justify-center flex-shrink-0"><FiLock className="w-6 h-6 text-destructive" /></div>
           <div>
             <h2 className="font-semibold text-destructive">Result Access Locked</h2>
-            <p className="text-sm text-muted-foreground mt-1">{child.fullName}'s school fees have not been fully paid.</p>
+            <p className="text-sm text-muted-foreground mt-1">{child.fullName}'s school fees have not been fully paid. Outstanding balance: ₦{balance.toLocaleString()}.</p>
             <Badge variant="unpaid" className="mt-2">{child.feeStatus}</Badge>
           </div>
         </div>

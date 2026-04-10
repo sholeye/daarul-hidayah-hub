@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { FiDollarSign, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import { useSharedData } from '@/contexts/SharedDataContext';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency, formatDate } from '@/utils/helpers';
+import { formatCurrency, formatDate, getOutstandingBalance, getPaymentProgress } from '@/utils/helpers';
 import { InlineLoader } from '@/components/ui/page-loader';
 import { motion } from 'framer-motion';
 
@@ -23,8 +23,8 @@ export const ParentFees: React.FC = () => {
 
   const child = myChildren.find(c => c.studentId === selectedChild);
   const childPayments = payments.filter(p => p.studentId === selectedChild);
-  const balance = child ? child.totalFee - child.amountPaid : 0;
-  const percentage = child ? Math.round((child.amountPaid / child.totalFee) * 100) : 0;
+  const balance = child ? getOutstandingBalance(child.totalFee, child.amountPaid) : 0;
+  const percentage = child ? getPaymentProgress(child.amountPaid, child.totalFee) : 0;
 
   if (isLoading) return <InlineLoader />;
 

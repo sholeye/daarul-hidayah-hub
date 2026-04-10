@@ -15,7 +15,7 @@ import { calculateGrade, getGradeRemarks } from '@/utils/helpers';
 import { InlineLoader } from '@/components/ui/page-loader';
 import { motion } from 'framer-motion';
 
-const SUBJECTS = ['Arabic Language', 'Islamic Studies', 'Quran Memorization', 'Hadith', 'Fiqh', 'English Language', 'Mathematics', 'IT/Computer'];
+const SUBJECTS = ['hifz', "qira'a", 'hadith', 'lugah', 'seerah', 'adhkar', 'tajweed', 'tawheed', 'fiqh', 'nahw', 'sarf', 'khat'];
 
 export const InstructorResults: React.FC = () => {
   const { user } = useAuth();

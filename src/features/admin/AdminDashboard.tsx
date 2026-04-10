@@ -5,18 +5,18 @@
 import React from 'react';
 import { FiUsers, FiDollarSign, FiTrendingUp, FiAlertCircle, FiCalendar, FiArrowUpRight, FiCheckCircle, FiClock } from 'react-icons/fi';
 import { useSharedData } from '@/contexts/SharedDataContext';
-import { formatCurrency, formatDate } from '@/utils/helpers';
+import { formatCurrency, formatDate, getOutstandingBalance } from '@/utils/helpers';
 import { Badge } from '@/components/ui/badge';
 import { InlineLoader } from '@/components/ui/page-loader';
 import { motion } from 'framer-motion';
 
 export const AdminDashboard: React.FC = () => {
-  const { students, announcements, attendance, isLoading } = useSharedData();
+  const { students, payments, announcements, attendance, isLoading } = useSharedData();
 
   const totalStudents = students.length;
   const paidStudents = students.filter(s => s.feeStatus === 'paid').length;
-  const totalRevenue = students.reduce((sum, s) => sum + s.amountPaid, 0);
-  const pendingFees = students.reduce((sum, s) => sum + (s.totalFee - s.amountPaid), 0);
+  const totalRevenue = payments.filter((payment) => payment.status === 'completed').reduce((sum, payment) => sum + payment.amount, 0);
+  const pendingFees = students.reduce((sum, student) => sum + getOutstandingBalance(student.totalFee, student.amountPaid), 0);
 
   const today = new Date().toISOString().split('T')[0];
   const todayRecords = attendance.filter(a => a.date === today);

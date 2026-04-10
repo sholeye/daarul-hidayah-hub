@@ -4,6 +4,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { Student, StudentResult, Announcement, Payment, AttendanceRecord, BlogPost } from '@/types';
+import { getFeeStatus, normalizeCurrency } from '@/utils/helpers';
 
 // =============================================================================
 // STUDENTS
@@ -134,9 +135,14 @@ export const fetchPayments = async (): Promise<Payment[]> => {
 };
 
 export const createPayment = async (payment: Partial<Payment>): Promise<Payment> => {
+  const paymentAmount = Number(payment.amount || 0);
+  if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+    throw new Error('Payment amount must be greater than zero.');
+  }
+
   const { data, error } = await supabase.from('payments').insert({
     student_id: payment.studentId,
-    amount: payment.amount,
+    amount: paymentAmount,
     date: payment.date,
     term: payment.term,
     session: payment.session,
@@ -145,12 +151,6 @@ export const createPayment = async (payment: Partial<Payment>): Promise<Payment>
     status: payment.status || 'completed',
   }).select().single();
   if (error) throw error;
-  const { data: student } = await supabase.from('students').select('amount_paid, total_fee').eq('student_id', payment.studentId).single();
-  if (student) {
-    const newAmountPaid = Number(student.amount_paid) + Number(payment.amount);
-    const newStatus = newAmountPaid >= Number(student.total_fee) ? 'paid' : newAmountPaid > 0 ? 'partial' : 'unpaid';
-    await supabase.from('students').update({ amount_paid: newAmountPaid, fee_status: newStatus }).eq('student_id', payment.studentId);
-  }
   return mapPaymentFromDB(data);
 };
 
@@ -279,6 +279,9 @@ export const fetchSchoolClasses = async () => {
 // =============================================================================
 
 function mapStudentFromDB(row: Record<string, unknown>): Student {
+  const amountPaid = normalizeCurrency(Number(row.amount_paid) || 0);
+  const totalFee = normalizeCurrency(Number(row.total_fee) || 6000);
+
   return {
     id: row.id as string,
     studentId: row.student_id as string,
@@ -297,9 +300,9 @@ function mapStudentFromDB(row: Record<string, unknown>): Student {
     },
     class: row.class as string,
     enrollmentDate: row.enrollment_date as string || '',
-    feeStatus: row.fee_status as 'paid' | 'unpaid' | 'partial',
-    amountPaid: Number(row.amount_paid) || 0,
-    totalFee: Number(row.total_fee) || 6000,
+    feeStatus: getFeeStatus(amountPaid, totalFee),
+    amountPaid,
+    totalFee,
     imageUrl: row.image_url as string | undefined,
     qrCode: row.qr_code as string | undefined,
   };
