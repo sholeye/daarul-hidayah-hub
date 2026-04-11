@@ -970,9 +970,9 @@ create policy "notifications_delete_own" on public.notifications
 for delete to authenticated
 using (user_id = auth.uid());
 
-create policy "notifications_insert_admin" on public.notifications
+create policy "notifications_insert_authenticated" on public.notifications
 for insert to authenticated
-with check (public.has_role(auth.uid(), 'admin'));
+with check (true);
 
 create policy "notifications_insert_service" on public.notifications
 for insert to service_role
