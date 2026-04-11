@@ -166,6 +166,11 @@ export const updateRepresentative = async (id: string, updates: { has_completed?
   if (error) throw error;
 };
 
+export const deleteQuizRepresentative = async (id: string): Promise<void> => {
+  const { error } = await supabase.from('quiz_representatives').delete().eq('id', id);
+  if (error) throw error;
+};
+
 // =============================================================================
 // ANSWERS
 // =============================================================================

@@ -4,18 +4,20 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FiClock, FiFlag, FiRefreshCw, FiArrowLeft, FiArrowRight, FiCheck, FiX, FiZap, FiAward, FiTarget, FiStar, FiVolume2, FiVolumeX } from 'react-icons/fi';
+import { FiClock, FiFlag, FiArrowLeft, FiArrowRight, FiCheck, FiX, FiZap, FiAward, FiTarget, FiStar, FiVolume2, FiVolumeX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { InlineLoader } from '@/components/ui/page-loader';
-import { fetchQuizCompetitions } from '@/services/quizService';
+import { fetchQuizCompetitions, submitQuizAnswer, updateRepresentative } from '@/services/quizService';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuizSounds } from '@/hooks/useQuizSounds';
 import { useConfetti } from '@/hooks/useConfetti';
 import type { HouseName, QuizQuestion, QuizCompetition } from '@/types/quiz';
+
+const CIRCUMFERENCE = 2 * Math.PI * 34;
 
 const houseThemes: Record<HouseName, { gradient: string; bg: string; ring: string; glow: string; text: string }> = {
   AbuBakr: { gradient: 'from-emerald-500 to-emerald-700', bg: 'bg-emerald-500', ring: 'ring-emerald-500/50', glow: 'shadow-emerald-500/30', text: 'text-emerald-500' },
@@ -36,15 +38,26 @@ const inferHouseFromCode = (code: string): HouseName => {
 const normalize = (value: string) => value.trim().toLowerCase();
 
 const AnimatedTimer: React.FC<{ timeLeft: number; maxTime: number; theme: typeof houseThemes[HouseName] }> = ({ timeLeft, maxTime, theme }) => {
-  const percentage = (timeLeft / maxTime) * 100;
+  const fraction = maxTime > 0 ? timeLeft / maxTime : 0;
+  const offset = CIRCUMFERENCE * (1 - fraction);
   const isUrgent = timeLeft <= 10;
   const isCritical = timeLeft <= 5;
+
   return (
-    <div className={`relative flex items-center justify-center w-20 h-20 rounded-full bg-card border-4 transition-all duration-300 ${isCritical ? 'border-destructive animate-pulse scale-110' : isUrgent ? 'border-amber-500' : `border-muted ${theme.ring}`}`}>
-      <svg className="absolute inset-0 w-full h-full -rotate-90"><circle cx="40" cy="40" r="36" fill="none" stroke="currentColor" strokeWidth="4" className="text-muted" /><circle cx="40" cy="40" r="36" fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray={`${percentage * 2.26} 226`} className={`transition-all duration-1000 ${isCritical ? 'text-destructive' : isUrgent ? 'text-amber-500' : theme.text}`} /></svg>
+    <div className={`relative flex items-center justify-center w-20 h-20 rounded-full transition-all duration-300 ${isCritical ? 'scale-110' : ''}`}>
+      <svg viewBox="0 0 80 80" className="absolute inset-0 w-full h-full -rotate-90">
+        <circle cx="40" cy="40" r="34" fill="none" strokeWidth="5" className="stroke-muted" />
+        <circle
+          cx="40" cy="40" r="34" fill="none" strokeWidth="5"
+          strokeDasharray={CIRCUMFERENCE}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className={`transition-all duration-1000 ease-linear ${isCritical ? 'stroke-destructive' : isUrgent ? 'stroke-amber-500' : theme.text.replace('text-', 'stroke-')}`}
+        />
+      </svg>
       <div className="relative z-10 flex flex-col items-center">
-        <FiClock className={`w-4 h-4 mb-0.5 ${isCritical ? 'text-destructive' : 'text-muted-foreground'}`} />
-        <span className={`text-2xl font-bold ${isCritical ? 'text-destructive' : isUrgent ? 'text-amber-500' : 'text-foreground'}`}>{timeLeft}</span>
+        <FiClock className={`w-3.5 h-3.5 mb-0.5 ${isCritical ? 'text-destructive' : 'text-muted-foreground'}`} />
+        <span className={`text-2xl font-bold tabular-nums ${isCritical ? 'text-destructive animate-pulse' : isUrgent ? 'text-amber-500' : 'text-foreground'}`}>{timeLeft}</span>
       </div>
     </div>
   );
@@ -77,8 +90,10 @@ export const QuizTake: React.FC = () => {
   useEffect(() => {
     fetchQuizCompetitions()
       .then(comps => {
-        const upcoming = comps.find(c => c.status === 'upcoming') || comps[0] || null;
-        setCompetition(upcoming);
+        // Prefer live, then upcoming
+        const live = comps.find(c => c.status === 'live');
+        const upcoming = comps.find(c => c.status === 'upcoming');
+        setCompetition(live || upcoming || null);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -86,14 +101,14 @@ export const QuizTake: React.FC = () => {
 
   const rep = competition?.representatives.find(r => r.loginCode === code);
   const repHouse: HouseName = rep?.house ?? inferHouseFromCode(code);
-  const repName = rep?.name ?? 'Demo Representative';
+  const repName = rep?.name ?? code;
   const theme = houseThemes[repHouse];
 
   const assignedQuestions = useMemo<QuizQuestion[]>(() => {
     if (!competition) return [];
-    const ids = rep?.assignedQuestions?.length ? rep.assignedQuestions : competition.questions.slice(0, 5).map(q => q.id);
+    const ids = rep?.assignedQuestions?.length ? rep.assignedQuestions : competition.questions.map(q => q.id);
     const selected = ids.map(id => competition.questions.find(q => q.id === id)).filter(Boolean) as QuizQuestion[];
-    return selected.length ? selected : competition.questions.slice(0, 5);
+    return selected.length ? selected : competition.questions;
   }, [competition, rep]);
 
   const [index, setIndex] = useState(0);
@@ -127,6 +142,9 @@ export const QuizTake: React.FC = () => {
   const totalScore = useMemo(() => Object.values(answers).reduce((sum, a) => sum + a.points, 0), [answers]);
   const correctCount = useMemo(() => Object.values(answers).filter(a => a.isCorrect).length, [answers]);
 
+  const startTimeRef = useRef(Date.now());
+  useEffect(() => { startTimeRef.current = Date.now(); }, [current?.id]);
+
   const goNext = useCallback((auto = false) => {
     if (!current || finished) return;
     const answerText = auto ? (answers[current.id]?.answer ?? '') : draft;
@@ -137,6 +155,21 @@ export const QuizTake: React.FC = () => {
     if (soundEnabled) { result.isCorrect ? playCorrect() : playWrong(); }
     if (result.isCorrect) celebrateCorrect(repHouse);
 
+    // Submit answer to DB
+    if (competition && rep) {
+      const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
+      submitQuizAnswer({
+        competitionId: competition.id,
+        representativeId: rep.id,
+        questionId: current.id,
+        answer: answerText,
+        isCorrect: result.isCorrect,
+        pointsEarned: result.points,
+        timeSpent,
+        pendingGrade: current.type === 'essay',
+      }).catch(console.error);
+    }
+
     setTimeout(() => {
       setShowResult(false);
       if (indexRef.current >= assignedQuestions.length - 1) {
@@ -144,11 +177,16 @@ export const QuizTake: React.FC = () => {
         if (soundEnabled) playComplete();
         const finalScore = Object.values(answers).reduce((sum, a) => sum + a.points, 0) + result.points;
         celebrateCompletion(finalScore, totalPossible, repHouse);
+
+        // Mark rep as completed
+        if (rep) {
+          updateRepresentative(rep.id, { has_completed: true, score: finalScore }).catch(console.error);
+        }
         return;
       }
       setIndex(i => i + 1);
     }, 800);
-  }, [assignedQuestions.length, current, draft, finished, gradeQuestion, answers, soundEnabled, playCorrect, playWrong, playComplete, celebrateCorrect, celebrateCompletion, repHouse, totalPossible]);
+  }, [assignedQuestions.length, current, draft, finished, gradeQuestion, answers, soundEnabled, playCorrect, playWrong, playComplete, celebrateCorrect, celebrateCompletion, repHouse, totalPossible, competition, rep]);
 
   const goBack = useCallback(() => {
     if (finished || showResult || index <= 0) return;
@@ -182,7 +220,33 @@ export const QuizTake: React.FC = () => {
     );
   }
 
-  if (!competition || !current) {
+  if (!rep) {
+    return (
+      <div dir={isRTL ? 'rtl' : 'ltr'} className="max-w-2xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-3xl p-8 text-center">
+          <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6"><FiX className="w-10 h-10 text-destructive" /></div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{t.error}</h1>
+          <p className="text-muted-foreground mb-8">Invalid login code. Please check with your admin.</p>
+          <Link to="/quiz"><Button variant="outline" size="lg" className="gap-2"><FiArrowLeft className="w-5 h-5" />{t.backToPortal}</Button></Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (rep.hasCompleted) {
+    return (
+      <div dir={isRTL ? 'rtl' : 'ltr'} className="max-w-2xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-3xl p-8 text-center">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6"><FiCheck className="w-10 h-10 text-primary" /></div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Already Completed</h1>
+          <p className="text-muted-foreground mb-4">You have already taken this quiz. Score: {rep.score} pts</p>
+          <Link to="/quiz"><Button variant="outline" size="lg" className="gap-2"><FiArrowLeft className="w-5 h-5" />{t.backToPortal}</Button></Link>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!competition || assignedQuestions.length === 0) {
     return (
       <div dir={isRTL ? 'rtl' : 'ltr'} className="max-w-2xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-3xl p-8 text-center">
@@ -211,7 +275,7 @@ export const QuizTake: React.FC = () => {
                 {isPerfect ? <FiStar className="w-12 h-12" /> : isExcellent ? <FiAward className="w-12 h-12" /> : <FiZap className="w-12 h-12" />}
               </motion.div>
               <h1 className="text-3xl font-bold mb-2">{t.quizCompleted}</h1>
-              <p className="text-white/80">{repName} • {repHouse}</p>
+              <p className="text-white/80">{repName} &bull; {repHouse}</p>
             </div>
           </div>
           <div className="p-8">

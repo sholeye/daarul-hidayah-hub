@@ -13,8 +13,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { InlineLoader } from '@/components/ui/page-loader';
 import type { QuizCompetition, House } from '@/types/quiz';
 
-const DEMO_MODE = true;
-
 const houseColors: Record<string, string> = {
   AbuBakr: 'bg-emerald-500', Umar: 'bg-blue-500', Uthman: 'bg-amber-500', Ali: 'bg-rose-500',
 };
@@ -32,8 +30,10 @@ export const QuizUpcoming: React.FC = () => {
   useEffect(() => {
     Promise.all([fetchQuizCompetitions(), fetchQuizHouses()])
       .then(([comps, h]) => {
-        const upcoming = comps.find(c => c.status === 'upcoming') || null;
-        setCompetition(upcoming);
+        // Prefer live, then upcoming
+        const live = comps.find(c => c.status === 'live');
+        const upcoming = comps.find(c => c.status === 'upcoming');
+        setCompetition(live || upcoming || null);
         setHouses(h);
       })
       .catch(console.error)
@@ -42,24 +42,40 @@ export const QuizUpcoming: React.FC = () => {
 
   useEffect(() => {
     if (!competition) return;
-    if (DEMO_MODE) { setIsQuizTime(true); setTimeRemaining(t.quizIsLive); return; }
 
     const checkTime = () => {
+      if (competition.status === 'live') {
+        setIsQuizTime(true);
+        setTimeRemaining(t.quizIsLive);
+        return;
+      }
+
       const now = new Date();
       const [hours, minutes] = competition.scheduledTime.split(':').map(Number);
       const scheduledDate = new Date(competition.scheduledDate);
       scheduledDate.setHours(hours, minutes, 0, 0);
       const diff = scheduledDate.getTime() - now.getTime();
-      if (diff <= 5 * 60 * 1000 && diff > -2 * 60 * 60 * 1000) { setIsQuizTime(true); setTimeRemaining(t.quizIsLive); }
-      else if (diff > 0) { setIsQuizTime(false); const d = Math.floor(diff / 86400000); const h = Math.floor((diff % 86400000) / 3600000); const m = Math.floor((diff % 3600000) / 60000); setTimeRemaining(`${d}d ${h}h ${m}m`); }
-      else { setIsQuizTime(false); setTimeRemaining(t.competitionEnded); }
+
+      if (diff <= 5 * 60 * 1000 && diff > -2 * 60 * 60 * 1000) {
+        setIsQuizTime(true);
+        setTimeRemaining(t.quizIsLive);
+      } else if (diff > 0) {
+        setIsQuizTime(false);
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        setTimeRemaining(d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`);
+      } else {
+        setIsQuizTime(false);
+        setTimeRemaining(t.competitionEnded);
+      }
     };
     checkTime();
-    const interval = setInterval(checkTime, 60000);
+    const interval = setInterval(checkTime, 30000);
     return () => clearInterval(interval);
   }, [competition, t]);
 
-  const canStartQuiz = DEMO_MODE || isQuizTime;
+  const canStartQuiz = isQuizTime || competition?.status === 'live';
 
   const handleLogin = () => {
     const cleaned = loginCode.trim();
