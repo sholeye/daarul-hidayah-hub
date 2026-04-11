@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiPlus, FiCalendar, FiClock, FiUsers, FiHelpCircle, FiCopy, FiCheck, FiEdit2, FiTrash2, FiPlay, FiBarChart2, FiAward } from 'react-icons/fi';
+import { FiPlus, FiCalendar, FiClock, FiUsers, FiHelpCircle, FiCopy, FiCheck, FiTrash2, FiPlay, FiBarChart2, FiAward } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -25,19 +25,16 @@ export const AdminQuizPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'competitions' | 'questions' | 'credentials' | 'analytics'>('competitions');
   const [loading, setLoading] = useState(true);
 
-  // Data from DB
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [competitions, setCompetitions] = useState<QuizCompetition[]>([]);
   const [houses, setHouses] = useState<House[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
-  // Forms
   const [showNewCompetition, setShowNewCompetition] = useState(false);
   const [showNewQuestion, setShowNewQuestion] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: string; id: string; compId?: string } | null>(null);
 
-  // Add rep form
   const [showAddRep, setShowAddRep] = useState<string | null>(null);
   const [repForm, setRepForm] = useState({ name: '', house: 'AbuBakr', loginCode: '' });
 
@@ -115,6 +112,14 @@ export const AdminQuizPage: React.FC = () => {
 
   const handleAddRep = async (compId: string) => {
     if (!repForm.name || !repForm.loginCode) { toast.error('Name and login code required'); return; }
+    const comp = competitions.find(c => c.id === compId);
+    if (comp) {
+      const houseReps = comp.representatives.filter(r => r.house === repForm.house);
+      if (houseReps.length >= comp.repsPerHouse) {
+        toast.error(`${repForm.house} already has ${comp.repsPerHouse} representative(s) — the maximum for this competition.`);
+        return;
+      }
+    }
     try {
       await quizSvc.createQuizRepresentative({
         competitionId: compId,
@@ -130,7 +135,23 @@ export const AdminQuizPage: React.FC = () => {
     } catch (err: any) { toast.error(err.message); }
   };
 
-  const upcomingCompetition = competitions.find(c => c.status === 'upcoming');
+  const handleDeleteRep = async (repId: string) => {
+    try {
+      await quizSvc.deleteQuizRepresentative(repId);
+      toast.success('Representative removed');
+      loadData();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const handleSetCompetitionStatus = async (id: string, status: string) => {
+    try {
+      await quizSvc.updateCompetitionStatus(id, status);
+      toast.success(`Competition set to ${status}`);
+      loadData();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const upcomingCompetition = competitions.find(c => c.status === 'upcoming' || c.status === 'live');
 
   if (loading) return <InlineLoader />;
 
@@ -146,6 +167,7 @@ export const AdminQuizPage: React.FC = () => {
         onConfirm={() => {
           if (deleteTarget?.type === 'question') handleDeleteQuestion(deleteTarget.id);
           if (deleteTarget?.type === 'competition') handleDeleteCompetition(deleteTarget.id);
+          if (deleteTarget?.type === 'representative') handleDeleteRep(deleteTarget.id);
           setDeleteTarget(null);
         }}
       />
@@ -186,7 +208,7 @@ export const AdminQuizPage: React.FC = () => {
               <h3 className="text-lg font-bold text-foreground mb-4">{t.createCompetition}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium text-foreground mb-2">Title</label><Input value={competitionForm.title} onChange={(e) => setCompetitionForm({ ...competitionForm, title: e.target.value })} placeholder="Weekly Quiz - Week 3" /></div>
-                <div><label className="block text-sm font-medium text-foreground mb-2">Reps per House</label><Input type="number" value={competitionForm.repsPerHouse} onChange={(e) => setCompetitionForm({ ...competitionForm, repsPerHouse: parseInt(e.target.value) || 3 })} min={1} max={5} /></div>
+                <div><label className="block text-sm font-medium text-foreground mb-2">Reps per House</label><Input type="number" value={competitionForm.repsPerHouse} onChange={(e) => setCompetitionForm({ ...competitionForm, repsPerHouse: parseInt(e.target.value) || 3 })} min={1} max={10} /></div>
                 <div><label className="block text-sm font-medium text-foreground mb-2">Date</label><Input type="date" value={competitionForm.date} onChange={(e) => setCompetitionForm({ ...competitionForm, date: e.target.value })} /></div>
                 <div><label className="block text-sm font-medium text-foreground mb-2">Time</label><Input type="time" value={competitionForm.time} onChange={(e) => setCompetitionForm({ ...competitionForm, time: e.target.value })} /></div>
               </div>
@@ -196,65 +218,86 @@ export const AdminQuizPage: React.FC = () => {
 
           {competitions.length === 0 && !showNewCompetition && <p className="text-center text-muted-foreground py-8">No competitions yet. Create one to get started!</p>}
 
-          {competitions.map(comp => (
-            <div key={comp.id} className="rounded-2xl bg-card border border-border shadow-soft overflow-hidden">
-              <div className="bg-gradient-to-r from-primary to-primary/80 p-4 text-primary-foreground flex items-center justify-between">
-                <div className="flex items-center gap-3"><FiPlay className="w-5 h-5" /><span className="font-bold">{comp.title}</span></div>
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-white/20 text-white">{comp.status}</Badge>
-                  <Badge className="bg-white/20 text-white">{formatDate(comp.scheduledDate)} • {comp.scheduledTime}</Badge>
-                  <Button variant="ghost" size="icon" className="text-white h-8 w-8" onClick={() => setDeleteTarget({ type: 'competition', id: comp.id })}><FiTrash2 className="w-4 h-4" /></Button>
+          {competitions.map(comp => {
+            const totalReps = comp.representatives.length;
+            const maxReps = comp.repsPerHouse * 4;
+            return (
+              <div key={comp.id} className="rounded-2xl bg-card border border-border shadow-soft overflow-hidden">
+                <div className="bg-gradient-to-r from-primary to-primary/80 p-4 text-primary-foreground flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-3"><FiPlay className="w-5 h-5" /><span className="font-bold">{comp.title}</span></div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge className="bg-white/20 text-white">{comp.status}</Badge>
+                    <Badge className="bg-white/20 text-white">{formatDate(comp.scheduledDate)} &bull; {comp.scheduledTime}</Badge>
+                    {comp.status === 'upcoming' && (
+                      <Button variant="ghost" size="sm" className="text-white h-8 text-xs" onClick={() => handleSetCompetitionStatus(comp.id, 'live')}>Go Live</Button>
+                    )}
+                    {comp.status === 'live' && (
+                      <Button variant="ghost" size="sm" className="text-white h-8 text-xs" onClick={() => handleSetCompetitionStatus(comp.id, 'completed')}>End</Button>
+                    )}
+                    <Button variant="ghost" size="icon" className="text-white h-8 w-8" onClick={() => setDeleteTarget({ type: 'competition', id: comp.id })}><FiTrash2 className="w-4 h-4" /></Button>
+                  </div>
                 </div>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                  <div className="text-center p-3 rounded-xl bg-muted/50"><p className="text-2xl font-bold text-primary">{comp.questions.length}</p><p className="text-sm text-muted-foreground">{t.questions}</p></div>
-                  <div className="text-center p-3 rounded-xl bg-muted/50"><p className="text-2xl font-bold text-primary">{comp.repsPerHouse}</p><p className="text-sm text-muted-foreground">Reps/House</p></div>
-                  <div className="text-center p-3 rounded-xl bg-muted/50"><p className="text-2xl font-bold text-primary">{comp.representatives.length}</p><p className="text-sm text-muted-foreground">{t.representatives}</p></div>
-                  <div className="text-center p-3 rounded-xl bg-muted/50"><p className="text-2xl font-bold text-primary">{comp.representatives.filter(r => r.hasCompleted).length}</p><p className="text-sm text-muted-foreground">Completed</p></div>
-                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <div className="text-center p-3 rounded-xl bg-muted/50"><p className="text-2xl font-bold text-primary">{comp.questions.length}</p><p className="text-sm text-muted-foreground">{t.questions}</p></div>
+                    <div className="text-center p-3 rounded-xl bg-muted/50"><p className="text-2xl font-bold text-primary">{comp.repsPerHouse}</p><p className="text-sm text-muted-foreground">Reps/House</p></div>
+                    <div className="text-center p-3 rounded-xl bg-muted/50"><p className="text-2xl font-bold text-primary">{totalReps}/{maxReps}</p><p className="text-sm text-muted-foreground">{t.representatives}</p></div>
+                    <div className="text-center p-3 rounded-xl bg-muted/50"><p className="text-2xl font-bold text-primary">{comp.representatives.filter(r => r.hasCompleted).length}</p><p className="text-sm text-muted-foreground">Completed</p></div>
+                  </div>
 
-                {/* Reps by house */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {houses.map(house => {
-                    const reps = comp.representatives.filter(r => r.house === house.name);
-                    return (
-                      <div key={house.name} className="p-4 rounded-xl bg-muted/30 border border-border">
-                        <div className="flex items-center gap-2 mb-3"><div className={`w-4 h-4 rounded-full ${houseColors[house.name]}`} /><span className="font-semibold text-foreground">{house.name}</span></div>
-                        <div className="space-y-2">
-                          {reps.map(rep => (
-                            <div key={rep.id} className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground truncate">{rep.name}</span>
-                              {rep.hasCompleted && <FiCheck className="w-4 h-4 text-primary" />}
-                            </div>
-                          ))}
-                          {reps.length === 0 && <p className="text-xs text-muted-foreground italic">No reps</p>}
+                  {/* Reps by house */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {houses.map(house => {
+                      const reps = comp.representatives.filter(r => r.house === house.name);
+                      const isFull = reps.length >= comp.repsPerHouse;
+                      return (
+                        <div key={house.name} className="p-4 rounded-xl bg-muted/30 border border-border">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2"><div className={`w-4 h-4 rounded-full ${houseColors[house.name]}`} /><span className="font-semibold text-foreground">{house.name}</span></div>
+                            <span className={`text-xs font-medium ${isFull ? 'text-primary' : 'text-muted-foreground'}`}>{reps.length}/{comp.repsPerHouse}</span>
+                          </div>
+                          <div className="space-y-2">
+                            {reps.map(rep => (
+                              <div key={rep.id} className="flex items-center justify-between text-sm group">
+                                <span className="text-muted-foreground truncate flex-1">{rep.name}</span>
+                                <div className="flex items-center gap-1">
+                                  {rep.hasCompleted && <FiCheck className="w-4 h-4 text-primary" />}
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setDeleteTarget({ type: 'representative', id: rep.id })}><FiTrash2 className="w-3 h-3 text-destructive" /></Button>
+                                </div>
+                              </div>
+                            ))}
+                            {reps.length === 0 && <p className="text-xs text-muted-foreground italic">No reps</p>}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
 
-                {/* Add rep */}
-                <div className="mt-4">
-                  {showAddRep === comp.id ? (
-                    <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <Input placeholder="Rep name" value={repForm.name} onChange={e => setRepForm({ ...repForm, name: e.target.value })} />
-                        <select value={repForm.house} onChange={e => setRepForm({ ...repForm, house: e.target.value })} className="h-10 px-3 rounded-md border border-input bg-background text-foreground">
-                          {houses.map(h => <option key={h.name} value={h.name}>{h.name}</option>)}
-                        </select>
-                        <Input placeholder="Login code (e.g. AB-2024-001)" value={repForm.loginCode} onChange={e => setRepForm({ ...repForm, loginCode: e.target.value.toUpperCase() })} />
+                  {/* Add rep */}
+                  <div className="mt-4">
+                    {showAddRep === comp.id ? (
+                      <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <Input placeholder="Rep name" value={repForm.name} onChange={e => setRepForm({ ...repForm, name: e.target.value })} />
+                          <select value={repForm.house} onChange={e => setRepForm({ ...repForm, house: e.target.value })} className="h-10 px-3 rounded-md border border-input bg-background text-foreground">
+                            {houses.map(h => {
+                              const count = comp.representatives.filter(r => r.house === h.name).length;
+                              const full = count >= comp.repsPerHouse;
+                              return <option key={h.name} value={h.name} disabled={full}>{h.name} ({count}/{comp.repsPerHouse}){full ? ' - Full' : ''}</option>;
+                            })}
+                          </select>
+                          <Input placeholder="Login code (e.g. AB-2024-001)" value={repForm.loginCode} onChange={e => setRepForm({ ...repForm, loginCode: e.target.value.toUpperCase() })} />
+                        </div>
+                        <div className="flex gap-2"><Button size="sm" onClick={() => handleAddRep(comp.id)}>Add</Button><Button size="sm" variant="outline" onClick={() => setShowAddRep(null)}>Cancel</Button></div>
                       </div>
-                      <div className="flex gap-2"><Button size="sm" onClick={() => handleAddRep(comp.id)}>Add</Button><Button size="sm" variant="outline" onClick={() => setShowAddRep(null)}>Cancel</Button></div>
-                    </div>
-                  ) : (
-                    <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowAddRep(comp.id)}><FiPlus className="w-4 h-4" />Add Representative</Button>
-                  )}
+                    ) : (
+                      <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowAddRep(comp.id)} disabled={totalReps >= maxReps}><FiPlus className="w-4 h-4" />{totalReps >= maxReps ? 'All slots filled' : 'Add Representative'}</Button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
