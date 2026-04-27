@@ -132,6 +132,7 @@ export const InstructorAttendance: React.FC = () => {
             })}
           </tbody>
         </table>
+        </div>
         {classStudents.length === 0 && <div className="p-12 text-center"><p className="text-muted-foreground">No students in this class</p></div>}
       </div>
     </motion.div>
