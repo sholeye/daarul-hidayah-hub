@@ -115,7 +115,8 @@ export const InstructorAttendance: React.FC = () => {
       {isFutureDate && <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-center"><p className="text-destructive font-medium">Cannot mark attendance for future dates</p></div>}
 
       <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-muted/50"><tr><th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Student</th><th className="text-center px-6 py-4 text-sm font-semibold text-foreground">Present</th><th className="text-center px-6 py-4 text-sm font-semibold text-foreground">Absent</th><th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Status</th></tr></thead>
           <tbody className="divide-y divide-border">
             {classStudents.map((student) => {
@@ -131,6 +132,7 @@ export const InstructorAttendance: React.FC = () => {
             })}
           </tbody>
         </table>
+        </div>
         {classStudents.length === 0 && <div className="p-12 text-center"><p className="text-muted-foreground">No students in this class</p></div>}
       </div>
     </motion.div>
