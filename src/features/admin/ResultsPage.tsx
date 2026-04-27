@@ -100,7 +100,7 @@ export const ResultsPage: React.FC = () => {
 
       <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Student</th>
