@@ -1270,13 +1270,11 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => {
-    const stored = localStorage.getItem('language');
-    return (stored === 'ar' ? 'ar' : 'en') as Language;
-  });
+  // Default language on every load is Arabic. User can toggle to English
+  // for the session but the preference is intentionally NOT persisted.
+  const [language, setLanguageState] = useState<Language>('ar');
 
   useEffect(() => {
-    localStorage.setItem('language', language);
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
   }, [language]);
