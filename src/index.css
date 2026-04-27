@@ -169,6 +169,19 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-primary);
     font-feature-settings: 'ss01' on, 'ss02' on;
+    /* Prevent accidental horizontal overflow on narrow viewports (mobile) */
+    overflow-x: hidden;
+  }
+
+  html, body {
+    max-width: 100%;
+  }
+
+  /* Safety net: every element respects its container's width by default so a
+     long unbroken word or wide child can't push the layout off-screen. */
+  img, video, canvas, svg {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Headings with proper font */

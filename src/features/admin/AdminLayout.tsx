@@ -91,7 +91,7 @@ export const AdminLayout: React.FC = () => {
         </div>
       </aside>
 
-      <div className={`flex-1 ${isRTL ? 'lg:mr-72' : 'lg:ml-72'} min-h-screen flex flex-col`}>
+      <div className={`flex-1 min-w-0 ${isRTL ? 'lg:mr-72' : 'lg:ml-72'} min-h-screen flex flex-col`}>
         <header className="sticky top-0 z-40 h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center px-4 lg:px-8">
           <button className="lg:hidden p-2 rounded-xl hover:bg-muted transition-colors" onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
@@ -104,7 +104,7 @@ export const AdminLayout: React.FC = () => {
             </button>
           </div>
         </header>
-        <main className="flex-1 p-4 lg:p-8"><Outlet /></main>
+        <main className="flex-1 p-4 lg:p-8 overflow-x-hidden min-w-0"><Outlet /></main>
       </div>
 
       {sidebarOpen && <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
