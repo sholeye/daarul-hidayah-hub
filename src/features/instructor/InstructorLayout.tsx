@@ -62,7 +62,7 @@ export const InstructorLayout: React.FC = () => {
           <button onClick={() => setShowLogout(true)} className="w-full p-2 rounded-lg hover:bg-destructive/10 text-destructive flex items-center justify-center gap-2"><FiLogOut className="w-5 h-5" /><span>{t.logout}</span></button>
         </div>
       </aside>
-      <main className={`${isRTL ? 'lg:mr-64' : 'lg:ml-64'} pt-16 lg:pt-0 min-h-screen`}><div className="p-6 lg:p-8"><Outlet /></div></main>
+      <main className={`${isRTL ? 'lg:mr-64' : 'lg:ml-64'} pt-16 lg:pt-0 min-h-screen overflow-x-hidden`}><div className="p-4 sm:p-6 lg:p-8 min-w-0"><Outlet /></div></main>
 
       <ConfirmDialog open={showLogout} onOpenChange={setShowLogout} title="Sign Out" description="Are you sure you want to sign out?" confirmLabel="Sign Out" onConfirm={handleLogout} />
     </div>
