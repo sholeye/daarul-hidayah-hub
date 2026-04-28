@@ -27,6 +27,7 @@ import Blog from "./pages/Blog";
 import Signup from "./pages/Signup";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
+import MobileTestChecklist from "./pages/MobileTestChecklist";
 
 // Admin
 import { AdminLayout } from "@/features/admin/AdminLayout";
@@ -92,6 +93,7 @@ const App = () => (
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
+                <Route path="/dev/mobile-test" element={<MobileTestChecklist />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={
